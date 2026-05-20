@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { kotoba_questions, kyuyo_questions, manner_questions } from "@/app/data/questions";
 
 const categories = [
   {
@@ -9,7 +10,7 @@ const categories = [
     icon: "💬",
     color: "#38bdf8",
     bgColor: "#0c2a3a",
-    count: 10,
+    count: kotoba_questions.length,
   },
   {
     id: "kyuyo",
@@ -19,7 +20,7 @@ const categories = [
     icon: "💰",
     color: "#4ade80",
     bgColor: "#0a2a1a",
-    count: 8,
+    count: kyuyo_questions.length,
   },
   {
     id: "manner",

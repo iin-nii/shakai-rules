@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { kotoba_questions, kyuyo_questions, manner_questions } from "@/app/data/questions";
 
 const categories = [
   {
@@ -9,7 +10,7 @@ const categories = [
     icon: "💬",
     color: "#38bdf8",
     bgColor: "#0c2a3a",
-    count: 22,
+    count: kotoba_questions.length,
     detail: "「了解しました」はNG？正しい敬語の使い方を問題形式で確認しよう。",
   },
   {
@@ -20,7 +21,7 @@ const categories = [
     icon: "💰",
     color: "#4ade80",
     bgColor: "#0a2a1a",
-    count: 18,
+    count: kyuyo_questions.length,
     detail: "給与明細の見方から社会保険の仕組みまで。空欄を埋めて理解を深めよう。",
   },
   {
@@ -31,7 +32,7 @@ const categories = [
     icon: "🤝",
     color: "#fbbf24",
     bgColor: "#2a1e0a",
-    count: 22,
+    count: manner_questions.length,
     detail: "これ、やってたら恥ずかしい！社会人マナーの常識・非常識を○×でチェック。",
   },
 ];
