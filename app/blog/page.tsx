@@ -1,67 +1,5 @@
 import Link from "next/link";
-
-const posts = [
-  {
-    slug: "tesori",
-    title: "手取りって何？額面との違いを5分で理解する",
-    category: "給与・保険",
-    color: "#4ade80",
-    bgColor: "#0a2a1a",
-    icon: "💰",
-    description: "「額面30万なのに手取り24万しかない…」その理由を完全解説。社会保険料・所得税・住民税の仕組みをシンプルに理解しよう。",
-    time: "5分",
-  },
-  {
-    slug: "keigo-kiso",
-    title: "最低限これだけ！社会人の敬語・基本の10パターン",
-    category: "言葉遣い",
-    color: "#38bdf8",
-    bgColor: "#0c2a3a",
-    icon: "💬",
-    description: "「了解です」はNGって知ってた？「ご苦労様」は誰に使う？すぐ使える敬語フレーズ10選を具体例付きで解説。",
-    time: "6分",
-  },
-  {
-    slug: "meishi",
-    title: "名刺交換、実は知らないルールだらけだった",
-    category: "マナー",
-    color: "#fbbf24",
-    bgColor: "#2a1e0a",
-    icon: "🤝",
-    description: "受け取ったらすぐしまう？それ全部間違い。名刺交換の正しい手順を状況別に解説します。",
-    time: "4分",
-  },
-  {
-    slug: "shakai-hoken",
-    title: "社会保険って何が引かれてるの？給与明細の読み方",
-    category: "給与・保険",
-    color: "#4ade80",
-    bgColor: "#0a2a1a",
-    icon: "💰",
-    description: "健康保険・厚生年金・雇用保険・労災保険。4つの保険を混同してる人が多い。それぞれ何のための保険かを整理しよう。",
-    time: "7分",
-  },
-  {
-    slug: "horenso",
-    title: "報・連・相（ほうれんそう）なぜ大事なのか本当の理由",
-    category: "マナー",
-    color: "#fbbf24",
-    bgColor: "#2a1e0a",
-    icon: "🤝",
-    description: "「報連相しろ」ってよく言われるけど、なぜ重要なの？職場の信頼関係と業務効率に直結する理由を解説。",
-    time: "5分",
-  },
-  {
-    slug: "yuukyuu",
-    title: "有給休暇は権利！正しい使い方と断られたときの対処法",
-    category: "給与・保険",
-    color: "#4ade80",
-    bgColor: "#0a2a1a",
-    icon: "💰",
-    description: "有給は入社何日後から使える？理由は言わなくていいの？断られたらどうする？全部答えます。",
-    time: "6分",
-  },
-];
+import { articles } from "@/app/data/articles";
 
 export default function BlogPage() {
   return (
@@ -74,7 +12,7 @@ export default function BlogPage() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts.map((post) => (
+        {articles.map((post) => (
           <Link
             key={post.slug}
             href={`/blog/${post.slug}`}
