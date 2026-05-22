@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界文化マップ</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f4f3ee;
+  --color-text-primary: #1a1a18;
+  --color-text-secondary: #5f5e5a;
+  --color-border-tertiary: rgba(0,0,0,0.12);
+  --color-border-secondary: rgba(0,0,0,0.22);
+  --font-sans: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --border-radius-md: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1c1c1a;
+    --color-background-secondary: #2a2a27;
+    --color-text-primary: #f0ede6;
+    --color-text-secondary: #a8a69f;
+    --color-border-tertiary: rgba(255,255,255,0.1);
+    --color-border-secondary: rgba(255,255,255,0.2);
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 14px 8px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h1 span.sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+#app { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+#map-container { flex: 1; position: relative; overflow: hidden; background: #c8dff0; min-height: 0; }
+
+svg#map { width: 100%; height: 100%; cursor: grab; }
+svg#map:active { cursor: grabbing; }
+
+.country { fill: #e8dcc8; stroke: #b5a080; stroke-width: 0.3; cursor: pointer; transition: fill 0.15s; }
+.country:hover { fill: #d4c4a8; }
+.country.active { fill: #c0784a; }
+.country.highlight { fill: #dbc89a; }
+
+#hint {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.5); color: #fff; font-size: 11px;
+  padding: 4px 12px; border-radius: 20px; pointer-events: none;
+  transition: opacity 0.4s; white-space: nowrap;
+}
+
+#zoom-wrap { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+.zbtn {
+  width: 28px; height: 28px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: 6px; font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-primary);
+}
+.zbtn:hover { background: var(--color-background-secondary); }
+
+#panel {
+  height: 210px; border-top: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+}
+
+#ph {
+  padding: 10px 14px 8px; border-bottom: 0.5px solid var(--color-border-tertiary);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+#pflag { font-size: 22px; line-height: 1; }
+#pname { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+#psub { font-size: 12px; color: var(--color-text-secondary); margin-left: auto; }
+
+#pb {
+  flex: 1; overflow-y: auto; padding: 10px 14px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;
+}
+#pb.empty {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-secondary); font-size: 13px; text-align: center;
+  line-height: 1.6;
+}
+
+.card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 10px; }
+.card-title { font-size: 10px; color: var(--color-text-secondary); font-weight: 500; letter-spacing: 0.04em; margin-bottom: 4px; }
+.card-body { font-size: 12px; color: var(--color-text-primary); line-height: 1.55; }
+
+@media (max-width: 600px) {
+  #pb { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<h1>🌍 世界文化マップ <span class="sub">— 国をクリックして文化・宗教・政治を調べる</span></h1>
+
+<div id="app">
+  <div id="map-container">
+    <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="hint">🌍 国をクリックして詳細を表示</div>
+    <div id="zoom-wrap">
+      <button class="zbtn" onclick="doZoom(1.3)" title="拡大">+</button>
+      <button class="zbtn" onclick="doZoom(0.77)" title="縮小">−</button>
+      <button class="zbtn" onclick="resetView()" title="リセット" style="font-size:11px">↺</button>
+    </div>
+  </div>
+  <div id="panel">
+    <div id="ph">
+      <span id="pflag">🌐</span>
+      <span id="pname">国をクリックしてください</span>
+      <span id="psub"></span>
+    </div>
+    <div id="pb" class="empty">地図上の国を選ぶと、食文化・生活習慣・宗教・政治制度の情報が表示されます</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+const DB = {
+  840:{name:'アメリカ',flag:'🇺🇸',region:'北米',
+    food:'ハンバーガー・ステーキ・BBQが代表的。移民の影響で中華・メキシコ・イタリア料理も日常的。食事量が多く外食文化が強い',
+    life:'車移動が基本の郊外型生活。個人の自由と自己責任を重視する文化。祝日は家族・友人でバーベキューが定番',
+    religion:'キリスト教（プロテスタント・カトリック）が多数だが信仰は個人の自由。無宗教も増加傾向',
+    politics:'大統領を国民が選ぶ大統領制。上院・下院の二院制議会。50州それぞれが独自の法律を持つ連邦制'},
+  156:{name:'中国',flag:'🇨🇳',region:'東アジア',
+    food:'八大料理があり地域差が大きい。米・麺・餃子が主食。茶文化が深く、食事は大人数で囲むのが基本',
+    life:'都市部は急速に近代化。家族のつながりを重視し、春節（旧正月）は民族大移動が起きる最大の行事',
+    religion:'公式には無宗教国家。実際には仏教・道教・民間信仰が広く根付く。少数民族の間にイスラム教も',
+    politics:'中国共産党の一党制。全国人民代表大会が最高機関。国家主席が党・軍・政府を統括する体制'},
+  643:{name:'ロシア',flag:'🇷🇺',region:'欧州・アジア',
+    food:'ボルシチ（ビーツのスープ）・ペリメニ（水餃子）・黒パン。寒冷地ゆえ保存食・発酵食品が発達',
+    life:'広大な国土に多民族が暮らす。夏の白夜・冬の極寒が生活リズムに影響。ダーチャ（別荘）文化が根強い',
+    religion:'ロシア正教会が歴史的・文化的な中心。礼拝・祭日・美術・建築に正教の影響が色濃く残る',
+    politics:'大統領が強い権限を持つ体制。二院制議会（国家会議・連邦会議）。89の連邦構成主体からなる連邦制'},
+  376:{name:'イスラエル',flag:'🇮🇱',region:'中東',
+    food:'フムス（ひよこ豆のペースト）・ファラフェル・シャクシュカが定番。ユダヤ教の食事規定（コーシャ）で豚・貝は禁忌',
+    life:'男女ともに2〜3年の兵役義務がある。宗教的な生活を送る層と世俗的な生活の層が混在する社会',
+    religion:'ユダヤ教が国家と深く結びつく。イスラム教徒のアラブ系市民も人口の約20%を占める',
+    politics:'一院制議会（クネセト）を中心とする議院内閣制。小党乱立のため連立政権が常態。比例代表制'},
+  364:{name:'イラン',flag:'🇮🇷',region:'中東',
+    food:'ケバブ・チェロウ（バスマティ米）・石榴やサフランを使った料理が多い。アルコールは法律で禁止',
+    life:'イスラム法が生活規範の基盤。女性はヒジャブの着用が法律で義務付けられている。詩・芸術の文化的素養が高い',
+    religion:'シーア派イスラム教が国教。最高指導者（ヴェラーヤテ・ファキーフ）が宗教的権威として最高位に立つ',
+    politics:'大統領と最高指導者が並立する独自のイスラム共和制。議会・司法・軍の上位に最高指導者が位置する'},
+  682:{name:'サウジアラビア',flag:'🇸🇦',region:'中東',
+    food:'カプサ（米と肉の炊き込み）・ハリース（小麦と肉のお粥）。豚・酒は禁忌。ラマダン中は日没後に盛大な食事',
+    life:'イスラム法に基づく社会規範。礼拝時間に合わせて生活が動く。近年は映画館・女性の運転など徐々に開放',
+    religion:'スンニ派イスラム教。ワッハーブ主義（厳格な原典回帰）が国内に影響。メッカ・メディナを持つ聖地国家',
+    politics:'国王が立法・行政・司法の最高権威を持つ絶対君主制。閣僚評議会が行政を担う。議会は諮問機関のみ'},
+  392:{name:'日本',flag:'🇯🇵',region:'東アジア',
+    food:'米・魚・出汁・醤油が基本。寿司・ラーメン・天ぷら・味噌汁。旬の食材を重視し、料理の見た目も大切にする',
+    life:'時間厳守・礼儀・場の空気を読む文化。四季に合わせた行事が多い。高齢化率が世界トップクラス',
+    religion:'神道と仏教が生活に溶け込む。多くの人が無宗教と自認しつつ、初詣・葬儀では両方の慣習に従う',
+    politics:'天皇を象徴とする立憲君主制。衆議院・参議院の二院制。内閣総理大臣が行政の長を務める議院内閣制'},
+  826:{name:'イギリス',flag:'🇬🇧',region:'欧州',
+    food:'フィッシュアンドチップス・サンデーロースト・スコーン。紅茶文化が有名。移民の影響でカレーも国民食に',
+    life:'階級意識が文化に残るが多文化社会でもある。パブが社交の場。国民保健サービス（NHS）が医療を支える',
+    religion:'英国国教会が公式宗教だが実際の信者は減少。多文化化でイスラム教・ヒンドゥー教徒も増加',
+    politics:'国王を元首とする立憲君主制。庶民院・貴族院の二院制。首相が行政を率いる議院内閣制。成文憲法なし'},
+  250:{name:'フランス',flag:'🇫🇷',region:'欧州',
+    food:'バゲット・チーズ（300種以上）・ワイン。食事をゆっくり楽しむ文化。ユネスコの無形文化遺産にも登録',
+    life:'バカンス（年5週以上の有給休暇）が文化的権利。カフェで議論する文化。世俗主義（ライシテ）が社会原則',
+    religion:'カトリックの伝統が強いが、世俗主義により公共の場での宗教表現を制限。イスラム教徒も約500万人',
+    politics:'大統領と首相が並立する半大統領制。国民議会・元老院の二院制。大統領は直接選挙で選出'},
+  276:{name:'ドイツ',flag:'🇩🇪',region:'欧州',
+    food:'ソーセージ（ブラートヴルスト）・ザウアークラウト・プレッツェル・ビール。パンだけで300種以上',
+    life:'効率・秩序・時間厳守を重視。環境意識が高くリサイクル文化が発達。仕事と余暇のバランスを大切にする',
+    religion:'プロテスタントとカトリックがほぼ同数。移民増加でイスラム教徒も増加。教会税制度が残る',
+    politics:'連邦大統領（象徴）と連邦首相（行政の長）が分離。連邦議会（下院）・連邦参議院（上院）の二院制。16州の連邦制'},
+  356:{name:'インド',flag:'🇮🇳',region:'南アジア',
+    food:'スパイスを多用したカレー・チャパティ・ダル（豆料理）。ヒンドゥー教徒は牛肉を食べない。地域ごとに大きく異なる',
+    life:'大家族で暮らす文化。カースト制の慣習が今も残る地域がある。クリケットが国民的スポーツ',
+    religion:'ヒンドゥー教が約80%。イスラム教が約14%。仏教・シク教・キリスト教なども共存。多宗教国家',
+    politics:'世界最大の有権者数を持つ連邦共和制。二院制議会（人民院・州民院）。州政府が強い権限を持つ連邦制'},
+  586:{name:'パキスタン',flag:'🇵🇰',region:'南アジア',
+    food:'ビリヤニ（スパイス炊き込みご飯）・ナン・チャイ（ミルクティー）。豚・アルコールはイスラム法で禁忌',
+    life:'イスラム法が生活規範の基盤。名誉と家族の絆を重視する文化。部族社会の慣習が地方で継続',
+    religion:'スンニ派イスラム教が国教（人口の約97%）。宗教が教育・法律・日常生活に深く関わる',
+    politics:'二院制議会（国民議会・元老院）を持つ連邦共和制。首相が行政の長。軍が伝統的に強い政治的影響力を持つ'},
+  410:{name:'韓国',flag:'🇰🇷',region:'東アジア',
+    food:'キムチ・ビビンバ・サムゲタン・ソルロンタン。辛い料理が多く、食事は大皿を囲む共同スタイル',
+    life:'儒教的な年功序列・礼儀の文化。受験競争が激しく教育熱が高い。K-POP・映画・ドラマを世界に発信',
+    religion:'無宗教・仏教・キリスト教（プロテスタント・カトリック）が混在。儒教的価値観が文化の基盤',
+    politics:'大統領を直接選挙で選ぶ大統領制。一院制国会。大統領の任期は5年で再選不可'},
+  704:{name:'ベトナム',flag:'🇻🇳',region:'東南アジア',
+    food:'フォー（米麺スープ）・バインミー・生春巻き。魚醤（ヌクマム）が基本調味料。南北で食文化が異なる',
+    life:'家族・祖先崇拝が生活の中心。バイクが主な移動手段。テト（旧正月）が最大の祭り',
+    religion:'大乗仏教・道教・儒教が融合した民間信仰が主流。カトリックも約8%。国が宗教を登録・管理する制度',
+    politics:'ベトナム共産党の一党制。党大会で方針を決め、国家主席・首相・国会議長の三権が並立する集団指導体制'},
+  792:{name:'トルコ',flag:'🇹🇷',region:'中東・欧州',
+    food:'ケバブ・メゼ（前菜盛り合わせ）・バクラヴァ（蜂蜜菓子）。チャイ（紅茶）を一日何杯も飲む文化',
+    life:'欧州とアジアの文化が混交するボスポラス海峡に位置。世俗主義の伝統とイスラム的慣習が並存',
+    religion:'スンニ派イスラム教が多数（約99%）。建国以来の世俗主義（ライクリク）の伝統もある',
+    politics:'大統領が行政・立法に強い権限を持つ大統領制（2017年改憲で移行）。一院制大国民議会'},
+  710:{name:'南アフリカ',flag:'🇿🇦',region:'アフリカ',
+    food:'ブライ（バーベキュー）・ボボティ（スパイス肉のオーブン料理）・ビルトング（干し肉）。11の公用語と同様、料理も多様',
+    life:'アパルトヘイト後の多文化・多人種社会。都市部と農村部の経済格差が大きい。ラグビー・サッカーが盛ん',
+    religion:'キリスト教が約80%。伝統的なアフリカの民間信仰も根強く、イスラム教・ヒンドゥー教も存在',
+    politics:'大統領が国家元首と行政府の長を兼任する共和制。国民議会・州代表評議会の二院制。ANCが長期政権を担う'},
+  36:{name:'オーストラリア',flag:'🇦🇺',region:'オセアニア',
+    food:'バーベキュー（バービー）文化が根強い。ミートパイ・ベジマイト（酵母ペースト）が定番。多文化の影響でアジア料理も浸透',
+    life:'アウトドア・スポーツ文化が盛ん。移民国家で多文化主義を採用。先住民アボリジニの文化も重要な一部',
+    religion:'キリスト教徒が多いが無宗教も増加中。多文化社会のため仏教・イスラム教・ヒンドゥー教なども',
+    politics:'英国国王を元首とする連邦立憲君主制。上院・下院の二院制連邦議会。首相が行政の長を務める議院内閣制'},
+  76:{name:'ブラジル',flag:'🇧🇷',region:'南米',
+    food:'フェイジョアーダ（黒豆と豚肉の煮込み）・シュラスコ（肉の串焼き）・カイピリーニャ（カクテル）。多民族の食文化が融合',
+    life:'カーニバル・サッカー・音楽（サンバ・ボサノバ）が文化の象徴。家族の絆が強く大家族で集まる文化',
+    religion:'カトリックの信者数が世界最多の国。近年はペンテコスタル派（福音派）が急成長。アフロブラジル宗教も存在',
+    politics:'大統領が国家元首と行政府の長を兼任する大統領制連邦共和国。上院・下院の二院制。26州と連邦直轄区からなる連邦制'}
+};
+
+const highlights = new Set(Object.keys(DB).map(Number));
+const svg = d3.select('#map');
+const g = svg.append('g');
+let scale=1, tx=0, ty=0, dragging=false, sx, sy, stx, sty, activeEl=null;
+
+const proj = d3.geoNaturalEarth1().scale(153).translate([480, 250]);
+const pathGen = d3.geoPath().projection(proj);
+
+fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  .then(r => r.json())
+  .then(world => {
+    const countries = topojson.feature(world, world.objects.countries);
+    g.selectAll('.country')
+      .data(countries.features).enter().append('path')
+      .attr('class', d => 'country' + (highlights.has(+d.id) ? ' highlight' : ''))
+      .attr('d', pathGen)
+      .on('click', (evt, d) => {
+        const info = DB[+d.id];
+        if (!info) return;
+        if (activeEl) d3.select(activeEl).classed('active', false);
+        activeEl = evt.currentTarget;
+        d3.select(activeEl).classed('active', true).classed('highlight', false);
+        document.getElementById('hint').style.opacity = '0';
+        showPanel(info);
+      });
+  });
+
+function showPanel(info) {
+  document.getElementById('pflag').textContent = info.flag;
+  document.getElementById('pname').textContent = info.name;
+  document.getElementById('psub').textContent = info.region;
+  const pb = document.getElementById('pb');
+  pb.className = '';
+  pb.innerHTML = `
+    <div class="card"><div class="card-title">🍚 食文化</div><div class="card-body">${info.food}</div></div>
+    <div class="card"><div class="card-title">🏠 生活習慣</div><div class="card-body">${info.life}</div></div>
+    <div class="card"><div class="card-title">🕌 宗教・価値観</div><div class="card-body">${info.religion}</div></div>
+    <div class="card"><div class="card-title">🏛 政治の仕組み</div><div class="card-body">${info.politics}</div></div>`;
+}
+
+// ドラッグ操作
+const mapEl = document.getElementById('map');
+mapEl.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('country')) return;
+  dragging = true; sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  tx = stx + (e.clientX - sx); ty = sty + (e.clientY - sy); applyT();
+});
+window.addEventListener('mouseup', () => dragging = false);
+
+// ホイールズーム
+mapEl.addEventListener('wheel', e => {
+  e.preventDefault();
+  doZoom(e.deltaY < 0 ? 1.15 : 0.87);
+}, { passive: false });
+
+function doZoom(f) { scale = Math.max(0.8, Math.min(14, scale * f)); applyT(); }
+function resetView() { scale = 1; tx = 0; ty = 0; applyT(); }
+function applyT() { g.attr('transform', `translate(${tx},${ty}) scale(${scale})`); }
+</script>
+</body>
+</html>

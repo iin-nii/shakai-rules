@@ -24,6 +24,7 @@ export default function RootLayout({
             <nav className="flex gap-6 text-sm font-medium" style={{ color: "#94a3b8" }}>
               <Link href="/quiz" className="hover:text-white transition-colors">クイズ</Link>
               <Link href="/blog" className="hover:text-white transition-colors">記事</Link>
+              <Link href="/tools" className="hover:text-white transition-colors">ツール</Link>
             </nav>
           </div>
         </header>

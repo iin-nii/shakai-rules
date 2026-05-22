@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国別経済損失計算機</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f4f3ee;
+  --color-text-primary: #1a1a18;
+  --color-text-secondary: #5f5e5a;
+  --color-text-tertiary: #888780;
+  --color-border-tertiary: rgba(0,0,0,0.12);
+  --color-border-secondary: rgba(0,0,0,0.22);
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1c1c1a;
+    --color-background-secondary: #2a2a27;
+    --color-text-primary: #f0ede6;
+    --color-text-secondary: #a8a69f;
+    --color-text-tertiary: #6e6c67;
+    --color-border-tertiary: rgba(255,255,255,0.1);
+    --color-border-secondary: rgba(255,255,255,0.2);
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  padding: 2rem 1.25rem;
+  max-width: 720px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.section-title {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.slider-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  min-width: 140px;
+}
+
+.slider-val {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 64px;
+  text-align: right;
+  color: var(--color-text-primary);
+}
+
+input[type="range"] {
+  flex: 1;
+  accent-color: #378ADD;
+  height: 4px;
+  cursor: pointer;
+}
+
+select {
+  border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  padding: 5px 10px;
+  font-size: 13px;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.metric {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 0.85rem 1rem;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.metric-value.loss { color: #E24B4A; }
+.metric-value.gdp  { color: #178DDC; }
+
+.divider {
+  border: none;
+  border-top: 0.5px solid var(--color-border-tertiary);
+  margin: 1.25rem 0;
+}
+
+.formula-box {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.25rem;
+  line-height: 1.7;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+}
+
+.status {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #888;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot.ok      { background: #639922; }
+.dot.loading { background: #EF9F27; animation: pulse 1s infinite; }
+.dot.err     { background: #E24B4A; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.source-tag {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-left: 4px;
+}
+
+button.act {
+  font-size: 13px;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  background: transparent;
+  color: var(--color-text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+button.act:hover { background: var(--color-background-secondary); }
+
+.top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+</style>
+</head>
+<body>
+
+<h1>国別経済損失計算機</h1>
+<p class="subtitle">World Bank Open Data をリアルタイム取得して損失を推計するモデル実験ツール</p>
+
+<div class="top-row">
+  <div class="section-title" style="margin:0;">対象国</div>
+  <select id="countrySelect" onchange="fetchData()">
+    <option value="JP">日本</option>
+    <option value="US">アメリカ</option>
+    <option value="CN">中国</option>
+    <option value="DE">ドイツ</option>
+    <option value="GB">イギリス</option>
+    <option value="FR">フランス</option>
+    <option value="KR">韓国</option>
+    <option value="IN">インド</option>
+    <option value="BR">ブラジル</option>
+    <option value="AU">オーストラリア</option>
+    <option value="CA">カナダ</option>
+    <option value="IT">イタリア</option>
+    <option value="RU">ロシア</option>
+    <option value="TR">トルコ</option>
+    <option value="MX">メキシコ</option>
+  </select>
+  <button class="act" onclick="fetchData()">
+    <i class="ti ti-refresh" aria-hidden="true"></i> 再取得
+  </button>
+</div>
+
+<div class="status" id="status">
+  <span class="dot loading" id="dot"></span>
+  <span id="statusText">データ取得中…</span>
+</div>
+
+<div class="formula-box">
+  推計損失 = GDP × (生産性低下率 + 失業率×労働分配率 + インフレ率) × 期間
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-label">名目GDP（兆ドル）</div><div class="metric-value gdp" id="m-gdp">—</div></div>
+  <div class="metric"><div class="metric-label">推計年間損失（兆ドル）</div><div class="metric-value loss" id="m-loss">—</div></div>
+  <div class="metric"><div class="metric-label">GDP比損失率</div><div class="metric-value loss" id="m-ratio">—</div></div>
+  <div class="metric"><div class="metric-label">累積損失（期間）</div><div class="metric-value loss" id="m-cum">—</div></div>
+  <div class="metric"><div class="metric-label">経常収支（実績）</div><div class="metric-value" id="m-cab">—</div></div>
+</div>
+
+<hr class="divider">
+
+<div class="section-title">変数（APIデータで自動設定 / 手動調整可）</div>
+
+<div class="slider-row">
+  <span class="slider-label">名目GDP（兆ドル）</span>
+  <input type="range" id="gdp" min="0.1" max="30" step="0.1" value="4" oninput="calc()">
+  <span class="slider-val" id="v-gdp">—</span>
+</div>
+<div class="slider-row">
+  <span class="slider-label">失業率 (%)</span>
+  <input type="range" id="unemp" min="0" max="30" step="0.5" value="3" oninput="calc()">
+  <span class="slider-val" id="v-unemp">—</span>
+</div>
+<div class="slider-row">
+  <span class="slider-label">インフレ率 (%)</span>
+  <input type="range" id="infl" min="0" max="30" step="0.5" value="2" oninput="calc()">
+  <span class="slider-val" id="v-infl">—</span>
+</div>
+<div class="slider-row">
+  <span class="slider-label">労働分配率 (%)</span>
+  <input type="range" id="labor" min="30" max="80" step="1" value="55" oninput="calc()">
+  <span class="slider-val" id="v-labor">55%</span>
+</div>
+<div class="slider-row">
+  <span class="slider-label">生産性低下率 (%) <span class="source-tag">手動</span></span>
+  <input type="range" id="prod" min="0" max="20" step="0.5" value="2" oninput="calc()">
+  <span class="slider-val" id="v-prod">2.0%</span>
+</div>
+<div class="slider-row">
+  <span class="slider-label">損失継続期間（年）</span>
+  <input type="range" id="years" min="1" max="20" step="1" value="3" oninput="calc()">
+  <span class="slider-val" id="v-years">3年</span>
+</div>
+
+<hr class="divider">
+
+<div class="section-title">損失内訳</div>
+<div class="chart-wrap">
+  <canvas id="chart" role="img" aria-label="生産性低下・失業・インフレによる損失内訳棒グラフ">損失内訳チャート</canvas>
+</div>
+
+<hr class="divider">
+
+<p style="font-size:12px; color:var(--color-text-tertiary);">
+  データソース: <a href="https://data.worldbank.org/" target="_blank" rel="noopener" style="color:inherit;">World Bank Open Data</a>
+  （NY.GDP.MKTP.CD / SL.UEM.TOTL.ZS / FP.CPI.TOTL.ZG）
+</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let chart;
+
+function setStatus(state, text) {
+  document.getElementById('dot').className = 'dot ' + state;
+  document.getElementById('statusText').textContent = text;
+}
+
+async function wbLatest(countryCode, indicator) {
+  const url = `https://api.worldbank.org/v2/country/${countryCode}/indicator/${indicator}?format=json&mrv=5&per_page=5`;
+  const res = await fetch(url);
+  const json = await res.json();
+  const entries = json[1];
+  if (!entries) return null;
+  for (const e of entries) {
+    if (e.value !== null) return { value: e.value, year: e.date };
+  }
+  return null;
+}
+
+async function fetchData() {
+  const code = document.getElementById('countrySelect').value;
+  setStatus('loading', 'World Bank API からデータ取得中…');
+  try {
+    const [gdpRes, unempRes, inflRes, tradeRes] = await Promise.all([
+      wbLatest(code, 'NY.GDP.MKTP.CD'),
+      wbLatest(code, 'SL.UEM.TOTL.ZS'),
+      wbLatest(code, 'FP.CPI.TOTL.ZG'),
+      wbLatest(code, 'BN.CAB.XOKA.CD'),
+    ]);
+    const notes = [];
+    if (gdpRes) {
+      document.getElementById('gdp').value = Math.min(Math.max(gdpRes.value / 1e12, 0.1), 30);
+      notes.push(`GDP ${gdpRes.year}`);
+    }
+    if (unempRes) {
+      document.getElementById('unemp').value = Math.min(unempRes.value, 30);
+      notes.push(`失業率 ${unempRes.year}`);
+    }
+    if (inflRes) {
+      document.getElementById('infl').value = Math.max(0, Math.min(inflRes.value, 30));
+      notes.push(`CPI ${inflRes.year}`);
+    }
+    if (tradeRes) {
+      const cab = tradeRes.value / 1e9; // 十億ドル
+      const el = document.getElementById('m-cab');
+      el.textContent = (cab >= 0 ? '+' : '') + cab.toFixed(0) + '億ドル';
+      el.className = 'metric-value ' + (cab >= 0 ? 'gdp' : 'loss');
+      notes.push(`経常収支 ${tradeRes.year}`);
+    }
+    setStatus('ok', '取得完了（' + notes.join(' / ') + '）— World Bank Open Data');
+  } catch(e) {
+    setStatus('err', 'API取得失敗。スライダーで手動入力してください。');
+  }
+  calc();
+}
+
+function calc() {
+  const gdp   = parseFloat(document.getElementById('gdp').value);
+  const unemp = parseFloat(document.getElementById('unemp').value) / 100;
+  const infl  = parseFloat(document.getElementById('infl').value) / 100;
+  const labor = parseFloat(document.getElementById('labor').value) / 100;
+  const prod  = parseFloat(document.getElementById('prod').value) / 100;
+  const years = parseInt(document.getElementById('years').value);
+
+  document.getElementById('v-gdp').textContent   = gdp.toFixed(1);
+  document.getElementById('v-unemp').textContent = (unemp*100).toFixed(1) + '%';
+  document.getElementById('v-infl').textContent  = (infl*100).toFixed(1) + '%';
+  document.getElementById('v-labor').textContent = (labor*100).toFixed(0) + '%';
+  document.getElementById('v-prod').textContent  = (prod*100).toFixed(1) + '%';
+  document.getElementById('v-years').textContent = years + '年';
+
+  const lossP  = gdp * prod;
+  const lossU  = gdp * unemp * labor;
+  const lossI  = gdp * infl;
+  const annual = lossP + lossU + lossI;
+  const ratio  = annual / gdp * 100;
+  const cum    = annual * years;
+
+  document.getElementById('m-gdp').textContent   = gdp.toFixed(2);
+  document.getElementById('m-loss').textContent  = annual.toFixed(3);
+  document.getElementById('m-ratio').textContent = ratio.toFixed(1) + '%';
+  document.getElementById('m-cum').textContent   = cum.toFixed(2);
+
+  const isDark    = matchMedia('(prefers-color-scheme: dark)').matches;
+  const textColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+
+  const data = {
+    labels: ['生産性低下', '失業損失', 'インフレ損耗'],
+    datasets: [{
+      data: [+lossP.toFixed(4), +lossU.toFixed(4), +lossI.toFixed(4)],
+      backgroundColor: ['#378ADD', '#E24B4A', '#EF9F27'],
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  };
+
+  if (chart) {
+    chart.data = data;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'bar',
+      data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.y.toFixed(3) + '兆' } }
+        },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 12 } }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, font: { size: 12 }, callback: v => '$' + v + '兆' }, grid: { color: gridColor } }
+        }
+      }
+    });
+  }
+}
+
+fetchData();
+</script>
+</body>
+</html>
