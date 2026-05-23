@@ -8,300 +8,1252 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f4f3ee;
-  --color-text-primary: #1a1a18;
-  --color-text-secondary: #5f5e5a;
-  --color-border-tertiary: rgba(0,0,0,0.12);
-  --color-border-secondary: rgba(0,0,0,0.22);
-  --font-sans: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
-  --border-radius-md: 8px;
+  --bg:   #ffffff; --bg2: #f4f3ee; --bg3: #ebebE6;
+  --tx:   #1a1a18; --tx2: #5f5e5a; --tx3: #888780;
+  --bd:   rgba(0,0,0,0.12); --bd2: rgba(0,0,0,0.20);
+  --font: system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;
+  --r: 8px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#2a2a27;--bg3:#323230;
+  --tx:#f0ede6;--tx2:#a8a69f;--tx3:#6e6c67;
+  --bd:rgba(255,255,255,0.10);--bd2:rgba(255,255,255,0.20);
+}}
+
+html,body { height:100%; font-family:var(--font); background:var(--bg); color:var(--tx); overflow:hidden; }
+
+/* ── ヘッダー ── */
+#header {
+  display:flex; align-items:center; gap:10px; padding:8px 14px;
+  border-bottom:0.5px solid var(--bd); flex-shrink:0;
+  background:var(--bg);
+}
+#header h1 { font-size:18px; font-weight:500; white-space:nowrap; }
+#header .sub { font-size:14px; color:var(--tx2); }
+#search-wrap { margin-left:auto; position:relative; }
+#search {
+  font-size:15px; padding:4px 28px 4px 8px;
+  border:0.5px solid var(--bd2); border-radius:16px;
+  background:var(--bg2); color:var(--tx); width:160px;
+  outline:none;
+}
+#search:focus { border-color:#378ADD; }
+#search-icon { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--tx3); pointer-events:none; }
+#country-count { font-size:14px; color:var(--tx3); white-space:nowrap; }
+
+/* ── レイアウト ── */
+#app { display:flex; flex-direction:column; height:calc(100vh - 37px); }
+
+/* ── 地図 ── */
+#map-container { flex:1; position:relative; overflow:hidden; background:#bdd8ee; min-height:0; }
+svg#map { width:100%; height:100%; cursor:grab; display:block; }
+svg#map:active { cursor:grabbing; }
+
+.country { fill:#e8dcc8; stroke:#b5a080; stroke-width:0.3; cursor:default; transition:fill 0.12s; }
+.country.has-data { cursor:pointer; }
+.country.r-east-asia  { fill:#e6dfc5; }
+.country.r-southeast-asia { fill:#e4dfcc; }
+.country.r-south-asia { fill:#e8dfc8; }
+.country.r-europe     { fill:#dde4d0; }
+.country.r-middle-east{ fill:#e8dbbf; }
+.country.r-africa     { fill:#e8d8c0; }
+.country.r-americas   { fill:#d8dfe8; }
+.country.r-oceania    { fill:#d4e4e0; }
+.country.r-centralasia{ fill:#e2dac8; }
+
+.country.has-data:hover { filter:brightness(0.92); }
+.country.active { fill:#c0784a !important; filter:none; }
+
+/* ── ツールチップ ── */
+#tooltip {
+  position:absolute; pointer-events:none;
+  background:rgba(0,0,0,0.72); color:#fff;
+  font-size:15px; padding:4px 12px; border-radius:12px;
+  white-space:nowrap; transform:translate(-50%,-130%);
+  opacity:0; transition:opacity 0.15s;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-primary: #1c1c1a;
-    --color-background-secondary: #2a2a27;
-    --color-text-primary: #f0ede6;
-    --color-text-secondary: #a8a69f;
-    --color-border-tertiary: rgba(255,255,255,0.1);
-    --color-border-secondary: rgba(255,255,255,0.2);
-  }
-}
-
-body {
-  font-family: var(--font-sans);
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-h1 {
-  font-size: 15px;
-  font-weight: 500;
-  padding: 10px 14px 8px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  flex-shrink: 0;
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-h1 span.sub {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-}
-
-#app { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-
-#map-container { flex: 1; position: relative; overflow: hidden; background: #c8dff0; min-height: 0; }
-
-svg#map { width: 100%; height: 100%; cursor: grab; }
-svg#map:active { cursor: grabbing; }
-
-.country { fill: #e8dcc8; stroke: #b5a080; stroke-width: 0.3; cursor: pointer; transition: fill 0.15s; }
-.country:hover { fill: #d4c4a8; }
-.country.active { fill: #c0784a; }
-.country.highlight { fill: #dbc89a; }
-
-#hint {
-  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,0.5); color: #fff; font-size: 11px;
-  padding: 4px 12px; border-radius: 20px; pointer-events: none;
-  transition: opacity 0.4s; white-space: nowrap;
-}
-
-#zoom-wrap { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; }
-
+/* ── ズームコントロール ── */
+#zoom-wrap { position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; }
 .zbtn {
-  width: 28px; height: 28px;
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 6px; font-size: 15px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--color-text-primary);
+  width:30px; height:30px; background:var(--bg); border:0.5px solid var(--bd2);
+  border-radius:6px; font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; color:var(--tx);
 }
-.zbtn:hover { background: var(--color-background-secondary); }
+.zbtn:hover { background:var(--bg2); }
 
+/* ── ヒント ── */
+#hint {
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.5); color:#fff; font-size:14px;
+  padding:4px 16px; border-radius:20px; pointer-events:none; white-space:nowrap;
+  transition:opacity 0.5s;
+}
+
+/* ── 凡例 ── */
+#legend {
+  position:absolute; bottom:10px; right:8px;
+  background:rgba(var(--bg-rgb, 255,255,255),0.88); border:0.5px solid var(--bd);
+  border-radius:var(--r); padding:6px 10px; font-size:13px; color:var(--tx2);
+  backdrop-filter:blur(4px);
+}
+@media(prefers-color-scheme:dark){#legend{background:rgba(28,28,26,0.88);}}
+.leg-row { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+.leg-row:last-child { margin-bottom:0; }
+.leg-dot { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+/* ── パネル ── */
 #panel {
-  height: 210px; border-top: 0.5px solid var(--color-border-tertiary);
-  background: var(--color-background-primary);
-  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  border-top:0.5px solid var(--bd); background:var(--bg);
+  display:flex; flex-direction:column; flex-shrink:0;
+  height:240px; transition:height 0.2s;
 }
-
 #ph {
-  padding: 10px 14px 8px; border-bottom: 0.5px solid var(--color-border-tertiary);
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding:9px 14px 7px; border-bottom:0.5px solid var(--bd);
+  display:flex; align-items:center; gap:8px; flex-shrink:0;
 }
-#pflag { font-size: 22px; line-height: 1; }
-#pname { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
-#psub { font-size: 12px; color: var(--color-text-secondary); margin-left: auto; }
+#pflag { font-size:28px; line-height:1; }
+#pname { font-size:19px; font-weight:500; }
+#psub  { font-size:14px; color:var(--tx2); }
+#pinfo { font-size:14px; color:var(--tx3); margin-left:auto; }
 
 #pb {
-  flex: 1; overflow-y: auto; padding: 10px 14px;
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;
+  flex:1; overflow-y:auto; padding:10px 14px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
 }
 #pb.empty {
-  display: flex; align-items: center; justify-content: center;
-  color: var(--color-text-secondary); font-size: 13px; text-align: center;
-  line-height: 1.6;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--tx2); font-size:14px; text-align:center; line-height:1.7;
 }
 
-.card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 10px; }
-.card-title { font-size: 10px; color: var(--color-text-secondary); font-weight: 500; letter-spacing: 0.04em; margin-bottom: 4px; }
-.card-body { font-size: 12px; color: var(--color-text-primary); line-height: 1.55; }
+.card { background:var(--bg2); border-radius:var(--r); padding:8px 10px; min-width:0; }
+.card-title { font-size:13px; color:var(--tx2); font-weight:500; letter-spacing:0.04em; margin-bottom:4px; }
+.card-body  { font-size:14px; color:var(--tx); line-height:1.55; }
 
-@media (max-width: 600px) {
-  #pb { grid-template-columns: 1fr 1fr; }
+@media(max-width:700px){
+  #pb { grid-template-columns:1fr 1fr; }
+  #panel { height:300px; }
+  #search { width:120px; }
+  #legend { display:none; }
 }
+@media(max-width:440px){
+  #pb { grid-template-columns:1fr; }
+  #panel { height:240px; }
+}
+
+/* ── タブ ── */
+#tabs {
+  display:flex; gap:0; overflow-x:auto; flex-shrink:0;
+  border-bottom:0.5px solid var(--bd); background:var(--bg);
+  scrollbar-width:none;
+}
+#tabs::-webkit-scrollbar { display:none; }
+.tab {
+  font-size:12px; padding:6px 13px; border:none; background:transparent;
+  color:var(--tx2); cursor:pointer; white-space:nowrap;
+  border-bottom:2px solid transparent; transition:color 0.15s;
+  flex-shrink:0;
+}
+.tab:hover { color:var(--tx); background:var(--bg2); }
+.tab.active { color:var(--tx); border-bottom-color:#378ADD; font-weight:500; }
+
+.no-data {
+  display:flex; align-items:center; justify-content:center;
+  color:var(--tx3); font-size:13px; height:100%; text-align:center;
+}
+
+/* ── バッジ（普遍/国別） ── */
+.badge {
+  display:inline-block; font-size:9px; padding:1px 5px;
+  border-radius:8px; margin-left:4px; vertical-align:middle; font-weight:400;
+}
+.badge.univ { background:rgba(55,138,221,0.15); color:#378ADD; }
+.badge.vary { background:rgba(239,159,39,0.18); color:#b07010; }
+@media(prefers-color-scheme:dark){
+  .badge.vary { color:#EF9F27; }
+}
+
+/* スクロールバー細め */
+#pb::-webkit-scrollbar { width:4px; }
+#pb::-webkit-scrollbar-track { background:transparent; }
+#pb::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:4px; }
 </style>
 </head>
 <body>
 
-<h1>🌍 世界文化マップ <span class="sub">— 国をクリックして文化・宗教・政治を調べる</span></h1>
+<div id="header">
+  <h1>🌍 世界文化マップ</h1>
+  <span class="sub">クリックで文化・宗教・言語・政治を表示</span>
+  <span id="country-count"></span>
+  <div id="search-wrap">
+    <input id="search" type="search" placeholder="国名で検索…" autocomplete="off" oninput="doSearch(this.value)">
+    <span id="search-icon">🔍</span>
+  </div>
+</div>
 
 <div id="app">
   <div id="map-container">
     <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
-    <div id="hint">🌍 国をクリックして詳細を表示</div>
+    <div id="tooltip"></div>
+    <div id="hint">🌍 データのある国（色付き）をクリック</div>
     <div id="zoom-wrap">
       <button class="zbtn" onclick="doZoom(1.3)" title="拡大">+</button>
       <button class="zbtn" onclick="doZoom(0.77)" title="縮小">−</button>
       <button class="zbtn" onclick="resetView()" title="リセット" style="font-size:11px">↺</button>
     </div>
+    <div id="legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#c5cfe0"></div>南北アメリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#c8d8c0"></div>ヨーロッパ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#d8c8a8"></div>中東・北アフリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#d8c0a8"></div>サブサハラ・アフリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#d8d0b8"></div>東・中央アジア</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#d0dcd8"></div>東南アジア・オセアニア</div>
+    </div>
   </div>
+
   <div id="panel">
     <div id="ph">
       <span id="pflag">🌐</span>
       <span id="pname">国をクリックしてください</span>
       <span id="psub"></span>
+      <span id="pinfo"></span>
     </div>
-    <div id="pb" class="empty">地図上の国を選ぶと、食文化・生活習慣・宗教・政治制度の情報が表示されます</div>
+    <div id="tabs">
+      <button class="tab active" onclick="switchTab(0)">📋 基本情報</button>
+      <button class="tab" onclick="switchTab(1)">💬 コミュニケーション</button>
+      <button class="tab" onclick="switchTab(2)">⚖️ ルール・禁忌</button>
+      <button class="tab" onclick="switchTab(3)">💡 価値観・マナー</button>
+      <button class="tab" onclick="switchTab(4)">💴 労働・経済</button>
+    </div>
+    <div id="pb" class="empty">地図上の色付きの国を選ぶと情報が表示されます</div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
+// ── データベース（ISO 3166-1 数値コード） ──────────────────────────────
+// フィールド: name, flag, region, food, life, religion, lang, politics
 const DB = {
-  840:{name:'アメリカ',flag:'🇺🇸',region:'北米',
-    food:'ハンバーガー・ステーキ・BBQが代表的。移民の影響で中華・メキシコ・イタリア料理も日常的。食事量が多く外食文化が強い',
-    life:'車移動が基本の郊外型生活。個人の自由と自己責任を重視する文化。祝日は家族・友人でバーベキューが定番',
-    religion:'キリスト教（プロテスタント・カトリック）が多数だが信仰は個人の自由。無宗教も増加傾向',
-    politics:'大統領を国民が選ぶ大統領制。上院・下院の二院制議会。50州それぞれが独自の法律を持つ連邦制'},
+  // ── 東アジア ──
+  392:{name:'日本',flag:'🇯🇵',region:'東アジア',
+    food:'米・魚・出汁・醤油が基本。寿司・ラーメン・天ぷら・味噌汁が代表的。旬の食材と盛り付けの美しさを重視',
+    life:'時間厳守・礼儀・空気を読む文化。四季の行事が豊富。高齢化率は世界最高水準で少子化が課題',
+    religion:'神道と仏教が生活に溶け込む。多くの人が無宗教と自認しつつ、初詣・葬儀では両方の慣習に従う',
+    lang:'日本語（公用語）。独自の文字体系（ひらがな・カタカナ・漢字）を持つ孤立した言語',
+    politics:'天皇を象徴とする立憲君主制。衆議院・参議院の二院制。内閣総理大臣が行政の長を務める議院内閣制',
+    comm:{
+      no:'直接「ノー」とは言わない。「難しいですね」「検討します」「少し…」が暗黙の断り。曖昧な返答は拒否と解釈せよ',
+      silence:'沈黙は肯定・思考・敬意の表れ。会話の間を無理に埋める必要はない。間（ま）は美徳',
+      eye:'目上への長い目線は失礼。適度に視線を外すのが礼儀。うなずき（相槌）が傾聴の合図',
+      emotion:'公共での感情表出は極めて抑制的。怒り・悲しみを人前に出すのは恥。「建前」と「本音」が分離',
+      gesture:'招き手は手のひらを下向きに。OKサインがお金を意味する場面あり。指で人を指すのは無礼'
+    },
+    rules:{
+      traffic:'左側通行（車・自転車・歩行者）',
+      dress:'場・TPOに応じた服装を重視。神社仏閣での過度な露出は不適切。ビジネスはスーツが基本',
+      photo:'寺社・人物撮影は配慮が必要。軍・警察施設の撮影禁止。美術館は作品ごとに規定',
+      banned:'コデイン・プソイドエフェドリン含有の市販薬は持込注意。麻薬・銃器の罰則は非常に重い',
+      lgbt:'同性愛行為は合法。同性婚は未法制化（2025年時点）。企業・都市部での受容は進みつつある'
+    },
+    values:{
+      time:'時間厳守が社会規範。5分前到着が礼儀。「すぐ」は文字通りを意味する',
+      collective:'高度な集団主義。「和を乱さない」「出る杭は打たれる」。全体の合意・根回しを重視',
+      tip:'チップは不要・むしろ失礼とされる場合も。サービスの対価は料金に含まれている',
+      gift:'贈り物文化が発達。包装・渡し方に礼儀あり。4（死）・9（苦）を避ける。奇数が吉',
+      color:'白は葬儀・喪の色。赤は魔除け・祝い。4（死）・9（苦）は不吉。名前を赤で書くのは縁起が悪い'
+    }},
   156:{name:'中国',flag:'🇨🇳',region:'東アジア',
     food:'八大料理があり地域差が大きい。米・麺・餃子が主食。茶文化が深く、食事は大人数で囲むのが基本',
     life:'都市部は急速に近代化。家族のつながりを重視し、春節（旧正月）は民族大移動が起きる最大の行事',
-    religion:'公式には無宗教国家。実際には仏教・道教・民間信仰が広く根付く。少数民族の間にイスラム教も',
-    politics:'中国共産党の一党制。全国人民代表大会が最高機関。国家主席が党・軍・政府を統括する体制'},
-  643:{name:'ロシア',flag:'🇷🇺',region:'欧州・アジア',
-    food:'ボルシチ（ビーツのスープ）・ペリメニ（水餃子）・黒パン。寒冷地ゆえ保存食・発酵食品が発達',
-    life:'広大な国土に多民族が暮らす。夏の白夜・冬の極寒が生活リズムに影響。ダーチャ（別荘）文化が根強い',
-    religion:'ロシア正教会が歴史的・文化的な中心。礼拝・祭日・美術・建築に正教の影響が色濃く残る',
-    politics:'大統領が強い権限を持つ体制。二院制議会（国家会議・連邦会議）。89の連邦構成主体からなる連邦制'},
+    religion:'公式には無宗教国家。実際には仏教・道教・民間信仰が根付く。少数民族の間にイスラム教も',
+    lang:'普通話（標準中国語）が公用語。広東語・上海語など多様な方言が存在。漢字文化圏の起源',
+    politics:'中国共産党の一党制。全国人民代表大会が最高機関。国家主席が党・軍・政府を統括する体制',
+    comm:{
+      no:'直接のノーを避ける傾向。「再考します」「不便かもしれない」が断りのサイン。面子（メンツ）を保つことが最優先',
+      silence:'ビジネスでの長い沈黙は不確実性・拒否のサイン。日常では自然に受け入れる',
+      eye:'目上への強い目線は挑戦的とみなされることも。会話中は適度なアイコンタクトが礼儀',
+      emotion:'面子を保つため公共での怒り・涙を抑える傾向。ただし市場や交通では感情的になることも',
+      gesture:'数字のハンドサインが独特（片手で1〜10を表現）。人差し指で人を指すのは無礼'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'全般的に現代的・自由。観光地や寺院では節度ある服装を',
+      photo:'軍事施設・政府機関・チベット地区などは撮影制限あり。天安門広場での撮影は注意',
+      banned:'グレートファイアウォールによりGoogle・YouTube・Instagramなどへのアクセスが制限。VPNも法的にグレー',
+      lgbt:'同性愛行為は合法だが同性婚は未法制化。社会的偏見は都市部と農村で大きく異なる'
+    },
+    values:{
+      time:'ビジネスでは時間厳守。社交では多少の遅れは許容。「马上（馬上＝すぐ）」は幅広い時間幅を持つ',
+      collective:'家族・集団を重視する集団主義。都市部若者は個人主義化傾向。面子（メンツ）が行動の核',
+      tip:'基本的に不要・不慣れ。高級ホテルや外資系では受け入れられるが文化的に根付いていない',
+      gift:'贈り物文化が非常に重要。赤い封筒（紅包）が祝儀の定番。4は死を連想させ厳禁',
+      color:'赤は幸運・祝いの色。白・黒は喪の色。4（死）は不吉、8（発財）は最高に吉'
+    }},
+  410:{name:'韓国',flag:'🇰🇷',region:'東アジア',
+    food:'キムチ・ビビンバ・サムゲタン・ソルロンタン。辛い料理が多く、食事は大皿を囲む共同スタイル',
+    life:'儒教的な年功序列・礼儀の文化。受験競争が激しく教育熱が高い。K-POP・映画・ドラマを世界に発信',
+    religion:'無宗教・仏教・キリスト教（プロテスタント・カトリック）が混在。儒教的価値観が文化の基盤',
+    lang:'韓国語（公用語）。ハングル文字は15世紀に創制された表音文字。日本語と文法的に類似',
+    politics:'大統領を直接選挙で選ぶ大統領制。一院制国会。大統領の任期は5年で再選不可',
+    comm:{
+      no:'比較的直接的だが年上・上司への断りは婉曲的表現も使う。年齢・地位によって言葉遣いが大きく変わる',
+      silence:'日本ほど美徳ではない。会話を続けようとする文化。沈黙が気まずさを生む場面も',
+      eye:'対等な関係ではアイコンタクトが重要。目上の人への強い目線は無礼とされる',
+      emotion:'感情表現は比較的活発。怒り・喜びを率直に表出する。パリパリ（早く早く）文化で感情もスピーディ',
+      gesture:'両手で物を渡すのが礼儀。片手は目上に対して失礼。お辞儀の角度が敬意の度合いを表す'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'外見への関心が高く身だしなみを重視。ビジネスはフォーマル。K-ビューティ文化が服装にも影響',
+      photo:'基本自由。軍事施設は禁止。DMZ（非武装地帯）観光では撮影ルールが厳格',
+      banned:'大麻は完全禁止（海外での使用も帰国後に摘発された事例あり）',
+      lgbt:'同性愛行為は合法だが同性婚は未法制化。軍での同性愛行為は別途規制あり。社会的偏見は根強い'
+    },
+    values:{
+      time:'時間厳守。パリパリ（빨리빨리）文化で何事もスピード重視。遅刻は無礼とみなされる',
+      collective:'儒教的集団主義。家族・会社への帰属意識が高い。個人より集団の評価（체면＝体面）を重視',
+      tip:'不要。サービス料は価格に含まれる。無理にチップを渡すと戸惑われる場合も',
+      gift:'贈り物文化あり。奇数の金額が吉。4（죽음＝死）は厳禁。化粧品・食品・商品券が人気',
+      color:'白は喪服の色。赤は情熱・愛。4（死）は不吉でエレベーターにF（fourth）と表記する建物も'
+    }},
+  496:{name:'モンゴル',flag:'🇲🇳',region:'東アジア',
+    food:'羊肉・馬乳酒（アイラグ）・ボーズ（蒸し餃子）が定番。遊牧文化を反映した保存食・乳製品が豊富',
+    life:'遊牧民の伝統が今も残り、ゲル（移動式住居）での生活文化が続く。ナーダム祭（競馬・弓・相撲）が最大の行事',
+    religion:'チベット仏教が主流。かつてシャーマニズムも根強く、両者が混交した信仰形態が残る',
+    lang:'モンゴル語（公用語）。キリル文字で表記（近年伝統的モンゴル文字の復活運動あり）',
+    politics:'大統領制と議院内閣制を組み合わせた半大統領制共和国。一院制議会（国家大会議）。複数政党制'},
+
+  // ── 東南アジア ──
+  704:{name:'ベトナム',flag:'🇻🇳',region:'東南アジア',
+    food:'フォー（米麺スープ）・バインミー・生春巻き。魚醤（ヌクマム）が基本調味料。南北で食文化が異なる',
+    life:'家族・祖先崇拝が生活の中心。バイクが主な移動手段。テト（旧正月）が最大の祭り',
+    religion:'大乗仏教・道教・儒教が融合した民間信仰が主流。カトリックも約8%。国が宗教を登録・管理する制度',
+    lang:'ベトナム語（公用語）。声調言語で6つの声調を持つ。ローマ字に声調記号を加えた独自表記を使用',
+    politics:'ベトナム共産党の一党制。党大会で方針を決め、国家主席・首相・国会議長の三権が並立する集団指導体制'},
+  360:{name:'インドネシア',flag:'🇮🇩',region:'東南アジア',
+    food:'ナシゴレン（炒飯）・ミーゴレン（焼きそば）・サテ（串焼き）・テンペ（発酵大豆）。スパイスが豊富',
+    life:'世界最多の島嶼国（1万7000以上の島）。多民族・多宗教が共存。ゴトン＝ロヨン（相互扶助）の文化',
+    religion:'世界最大のイスラム教人口（約87%）。バリ島ではヒンドゥー教が主流。キリスト教・仏教も存在',
+    lang:'インドネシア語（公用語）。ジャワ語・スンダ語など700以上の地域言語が存在する多言語国家',
+    politics:'大統領が国家元首と行政府の長を兼任する大統領制共和国。二院制議会。34州の地方分権が進む'},
+  764:{name:'タイ',flag:'🇹🇭',region:'東南アジア',
+    food:'パッタイ（炒め麺）・グリーンカレー・トムヤムクン。唐辛子・ライム・パクチーが風味の基本',
+    life:'仏教寺院（ワット）が生活の中心。出家体験が男性の通過儀礼。国王への崇敬が文化的に強い',
+    religion:'上座部仏教（テーラワーダ）が国教（約95%）。南部にイスラム教徒のマレー系少数民族も',
+    lang:'タイ語（公用語）。独自のアルファベット（44子音・32母音）を持つ声調言語。文字は11世紀頃に成立',
+    politics:'国王を元首とする立憲君主制。軍が政治に介入する歴史が長い。二院制議会（下院・上院）',
+    comm:{
+      no:'直接のノーを避ける。「ไม่เป็นไร（マイペンライ＝大丈夫・気にしない）」が何でも包む曖昧表現',
+      silence:'比較的普通に受け入れる。タイスマイル（微笑み）が多くの感情・意図を代替する',
+      eye:'目上・僧侶への長い目線は無礼。微笑みが主なコミュニケーションツール',
+      emotion:'公共での怒りを表に出すことは「顔を失う」行為として厳禁。常に穏やかさを保つことが美徳',
+      gesture:'合掌（ワイ）が挨拶の基本。頭は神聖なので他人の頭を触るのは絶対に禁忌。足先を人に向けない'
+    },
+    rules:{
+      traffic:'左側通行',
+      dress:'寺院（ワット）では肩・膝を覆う服装必須。王室・仏像の前では敬虔な服装。足は仏像に向けない',
+      photo:'仏像の前での不謹慎なポーズ撮影は違法（禁固刑の可能性）。王室批判の内容を撮影・拡散するのも危険',
+      banned:'王室批判は不敬罪（最長15年の禁固）。電子タバコの持込禁止。一部の薬（コデイン等）も要注意',
+      lgbt:'同性愛行為は合法。同性婚は2025年に法制化。観光地では比較的受容的だが保守的な地域では偏見も残る'
+    },
+    values:{
+      time:'「タイタイム」として遅刻が許容される場面も。sanuk（楽しむこと）と mai pen rai が時間感覚に影響',
+      collective:'仏教の「功徳を積む」意識が行動を規定。面子文化あり。集団の調和を重視',
+      tip:'慣習あり。レストランでは20〜50バーツ程度。高級店ではサービス料に含まれることも',
+      gift:'感謝の贈り物文化あり。数字9（縁起）が吉。花・果物・菓子が一般的。奇数が吉',
+      color:'黄は王室・仏教の神聖な色（月曜日の色）。黒・濃紺は喪服。曜日ごとにラッキーカラーがある文化'
+    }},
+  458:{name:'マレーシア',flag:'🇲🇾',region:'東南アジア',
+    food:'ナシレマ（ご飯とサンバル）・ラクサ・サテー。マレー・中華・インド系の料理が融合した多文化料理が特徴',
+    life:'マレー系・中国系・インド系の多民族社会。ブミプトラ（マレー系優遇）政策が社会構造に影響',
+    religion:'イスラム教が国教（約60%）。仏教・ヒンドゥー教・キリスト教も共存。宗教間の緊張も存在',
+    lang:'マレー語（公用語）。英語が広く通じ、中国語（広東語・福建語）・タミル語も使われる多言語社会',
+    politics:'国王（ヤン・ディ・ペルトゥアン・アゴン）を元首とする立憲君主制。二院制議会の議院内閣制'},
+  608:{name:'フィリピン',flag:'🇵🇭',region:'東南アジア',
+    food:'シニガン（タマリンドのスープ）・アドボ（酢と醤油の煮込み）・lechon（丸焼き豚）。スペイン・米国の影響が強い',
+    life:'家族主義・カトリック文化が社会の基盤。OFW（海外出稼ぎ労働者）が多く、送金が重要な経済要素',
+    religion:'カトリックが約80%でアジア最大のキリスト教国。南部ミンダナオ島にイスラム教徒のモロ人が多い',
+    lang:'フィリピノ語（タガログ語を基礎）と英語が公用語。170以上の地域言語が存在する多言語国家',
+    politics:'大統領を国民が直接選ぶ大統領制共和国。二院制議会。スペイン・米国の植民地経験が制度に影響'},
+  702:{name:'シンガポール',flag:'🇸🇬',region:'東南アジア',
+    food:'チキンライス・チリクラブ・ホッケン麺。多民族の影響でマレー・中華・インド・西洋料理が並立。ホーカーセンター文化',
+    life:'都市国家で世界有数の生活水準。多民族・多文化の調和を国是とする。「Fine City」と呼ばれる法治意識の高さ',
+    religion:'仏教・道教・キリスト教・イスラム教・ヒンドゥー教が共存。宗教的調和を国家が積極的に管理',
+    lang:'英語・中国語（標準語）・マレー語・タミル語の4言語が公用語。英語が共通語として機能する実質的英語社会',
+    politics:'議院内閣制。人民行動党（PAP）が1965年の独立以来、長期政権を維持。自由民主主義と管理された政治が並存',
+    comm:{
+      no:'英語文化の影響でYes/Noははっきりする傾向。多民族社会なのでコミュニケーションスタイルは個人差大',
+      silence:'比較的普通に受け入れる。多文化社会なので文化によって異なる',
+      eye:'一般的にアイコンタクトは誠実さの表れ',
+      emotion:'感情表現は抑制的。公共での怒りの表出は特に嫌われる。効率的で合理的なコミュニケーションを好む',
+      gesture:'左手での物の受け渡しを避ける傾向（マレー・インド系文化の影響）'
+    },
+    rules:{
+      traffic:'左側通行',
+      dress:'ビジネスはスマートカジュアル。モスク・寺院・教会での服装規定あり',
+      photo:'基本自由。政府機関・軍施設は制限あり',
+      banned:'チューインガムの販売・持込禁止（医療用除く）。ポイ捨て・公共喫煙・MRT内飲食の罰則が非常に厳しい',
+      lgbt:'同性愛行為は2022年に合法化。同性婚は未法制化。社会的受容は進みつつあるが保守的な層も'
+    },
+    values:{
+      time:'非常に時間厳守。効率・正確さを重視する国民性。「Kiasuism（負けたくない精神）」が行動原理',
+      collective:'実力主義（メリトクラシー）を重視。国家・社会秩序への貢献意識が強い',
+      tip:'基本不要（GST・サービスチャージが含まれる）。自発的なら歓迎',
+      gift:'ビジネスでの贈答あり。中国系は赤い包みが吉。4（死）は不吉',
+      color:'赤は幸運（中国系）。各民族により色の意味が異なる。4は不吉な数字'
+    }},
+  104:{name:'ミャンマー',flag:'🇲🇲',region:'東南アジア',
+    food:'モヒンガー（魚スープ麺）・ラペットウ（漬け茶の葉サラダ）。インド・タイ・中国の影響を受けた多様な食文化',
+    life:'135の民族が暮らす多民族国家。パゴダ（仏塔）が各地に立ち仏教が生活に深く浸透。軍政下で自由が制限される',
+    religion:'上座部仏教が約88%を占め国家的に重要な位置を占める。イスラム教徒のロヒンギャ問題が国際的な課題',
+    lang:'ビルマ語（公用語）。独自の文字（丸みを帯びた字体）を持つ。カレン語・シャン語など多数の少数民族語も',
+    politics:'2021年クーデター後は軍事政権（国家行政評議会）が実権を掌握。民主化運動が継続中'},
+
+  // ── 南アジア ──
+  356:{name:'インド',flag:'🇮🇳',region:'南アジア',
+    food:'スパイスを多用したカレー・チャパティ・ダル（豆料理）。ヒンドゥー教徒は牛肉を食べない。地域ごとに大きく異なる',
+    life:'大家族で暮らす文化。カースト制の慣習が今も残る地域がある。クリケットが国民的スポーツ',
+    religion:'ヒンドゥー教が約80%。イスラム教が約14%。仏教・シク教・キリスト教なども共存する多宗教国家',
+    lang:'ヒンディー語と英語が公用語。憲法には22の指定言語があり、実際には1500以上の言語が話される多言語国家',
+    politics:'世界最大の有権者数を持つ連邦共和制。二院制議会（人民院・州民院）。28州と8連邦直轄領からなる連邦制',
+    comm:{
+      no:'頭を横でなく左右にゆっくり揺らす「ヘッドボブル」が肯定・了解を意味することがあり混乱しやすい',
+      silence:'会話を活発に続ける傾向。沈黙は居心地悪さを示すことも。賑やかさが歓迎の表れ',
+      eye:'男女間・異カースト間のアイコンタクトは文化・地域・宗教によって大きく異なる',
+      emotion:'感情表現は比較的活発。宗教儀礼での感情表出はむしろ自然。怒りも比較的率直',
+      gesture:'頭は神聖なので他人の頭を触るのは失礼。足で物を触るのは最大の侮辱。左手は不浄'
+    },
+    rules:{
+      traffic:'左側通行',
+      dress:'ヒンドゥー寺院では肩・膝を隠す必要。女性は保守的な地域では露出を控える',
+      photo:'寺院内の撮影は許可制のことが多い。人物撮影は確認が礼儀。軍施設は禁止',
+      banned:'牛肉は州によっては持込・販売が違法。一部州では飲酒も禁止（グジャラート州など）',
+      lgbt:'同性愛行為は2018年に合法化。同性婚は未法制化。社会的受容は都市部で進むが農村では低い'
+    },
+    values:{
+      time:'「インド標準時間」と揶揄されるほど時間の感覚が柔軟。「coming」は数時間後を意味することも',
+      collective:'家族・コミュニティへの帰属意識が非常に強い。個人の決断も家族の合意が重要',
+      tip:'慣習あり。レストランでは5〜10%。ホテルポーターには50〜100ルピー程度',
+      gift:'宗教に応じて贈り物を選ぶ（牛革製品はヒンドゥー教徒に不可）。甘い菓子が最も安全',
+      color:'白は喪の色。オレンジ・赤は吉祥色。緑はイスラム教で神聖。数字の吉凶は地域・宗教で異なる'
+    }},
+  586:{name:'パキスタン',flag:'🇵🇰',region:'南アジア',
+    food:'ビリヤニ（スパイス炊き込みご飯）・ナン・チャイ（ミルクティー）。豚・アルコールはイスラム法で禁忌',
+    life:'イスラム法が生活規範の基盤。名誉と家族の絆を重視する文化。部族社会の慣習が地方で継続',
+    religion:'スンニ派イスラム教が国教（人口の約97%）。宗教が教育・法律・日常生活に深く関わる',
+    lang:'ウルドゥー語と英語が公用語。パンジャーブ語・シンド語など地域言語が多い。ウルドゥー語はアラビア文字で表記',
+    politics:'二院制議会（国民議会・元老院）を持つ連邦共和制。首相が行政の長。軍が伝統的に強い政治的影響力を持つ'},
+  50:{name:'バングラデシュ',flag:'🇧🇩',region:'南アジア',
+    food:'ビリヤニ・魚のカレー・ダル（豆汁）。ベンガル料理の伝統。マスタードオイルを多用し、淡水魚が主なタンパク源',
+    life:'世界有数の人口密度（首都ダッカは世界最密集都市の一つ）。農村では大家族制。縫製業が主要産業',
+    religion:'イスラム教が国教（約88%）。ヒンドゥー教が約10%。1971年のパキスタンからの独立戦争が国民意識の核',
+    lang:'ベンガル語（公用語）。独自の文字体系を持ち、インドの西ベンガル州とも共有。英語も教育・行政で使用',
+    politics:'首相が行政の長を務める議院内閣制共和国。一院制国会（国民議会）。選挙をめぐる政治的対立が激しい'},
+  524:{name:'ネパール',flag:'🇳🇵',region:'南アジア',
+    food:'ダルバート（豆汁・ご飯・野菜おかず）が主食。モモ（チベット式餃子）も定番。山岳地帯のため地域ごとに食材が異なる',
+    life:'ヒンドゥー教と仏教が混合した宗教文化。エベレストを含む8000m峰を擁するヒマラヤ文化。出稼ぎ労働者が多い',
+    religion:'ヒンドゥー教（約80%）と仏教（約10%）が混交。かつては世界唯一のヒンドゥー教王国。現在は連邦民主共和国',
+    lang:'ネパール語（公用語）。デーヴァナーガリー文字で表記。マガル語・タマン語など123の言語が話される',
+    politics:'2008年に王政を廃止し連邦民主共和国へ移行。二院制議会（代議院・国民議会）。首相が行政の長'},
+
+  // ── 中央アジア ──
+  398:{name:'カザフスタン',flag:'🇰🇿',region:'中央アジア',
+    food:'ベシュバルマク（茹でた肉と麺）・クムス（馬乳酒）・サムサ（肉まん）。遊牧民の伝統を受け継ぐ肉料理中心',
+    life:'世界9位の国土面積を持つ広大な国。遊牧民の伝統とソ連時代の近代化が混在。石油・天然ガスで急速に発展',
+    religion:'スンニ派イスラム教が主流（約70%）。ソ連時代の影響で世俗的な信仰形態が多い。ロシア正教会信者も約25%',
+    lang:'カザフ語とロシア語が公用語。カザフ語はチュルク語族に属し、キリル文字からラテン文字への移行を推進中',
+    politics:'大統領に強い権限が集中する大統領制共和国。二院制議会。1991年の独立以来、実質的な権威主義体制が続く'},
+
+  // ── 中東 ──
   376:{name:'イスラエル',flag:'🇮🇱',region:'中東',
     food:'フムス（ひよこ豆のペースト）・ファラフェル・シャクシュカが定番。ユダヤ教の食事規定（コーシャ）で豚・貝は禁忌',
     life:'男女ともに2〜3年の兵役義務がある。宗教的な生活を送る層と世俗的な生活の層が混在する社会',
     religion:'ユダヤ教が国家と深く結びつく。イスラム教徒のアラブ系市民も人口の約20%を占める',
+    lang:'ヘブライ語とアラビア語が公用語。ヘブライ語は2000年以上衰退していた言語の近代的復活という世界唯一の例',
     politics:'一院制議会（クネセト）を中心とする議院内閣制。小党乱立のため連立政権が常態。比例代表制'},
   364:{name:'イラン',flag:'🇮🇷',region:'中東',
     food:'ケバブ・チェロウ（バスマティ米）・石榴やサフランを使った料理が多い。アルコールは法律で禁止',
     life:'イスラム法が生活規範の基盤。女性はヒジャブの着用が法律で義務付けられている。詩・芸術の文化的素養が高い',
     religion:'シーア派イスラム教が国教。最高指導者（ヴェラーヤテ・ファキーフ）が宗教的権威として最高位に立つ',
+    lang:'ペルシア語（ファルシー語）が公用語。アラビア文字で表記するが印欧語族。アゼルバイジャン語・クルド語も話される',
     politics:'大統領と最高指導者が並立する独自のイスラム共和制。議会・司法・軍の上位に最高指導者が位置する'},
   682:{name:'サウジアラビア',flag:'🇸🇦',region:'中東',
     food:'カプサ（米と肉の炊き込み）・ハリース（小麦と肉のお粥）。豚・酒は禁忌。ラマダン中は日没後に盛大な食事',
     life:'イスラム法に基づく社会規範。礼拝時間に合わせて生活が動く。近年は映画館・女性の運転など徐々に開放',
     religion:'スンニ派イスラム教。ワッハーブ主義（厳格な原典回帰）が国内に影響。メッカ・メディナを持つ聖地国家',
-    politics:'国王が立法・行政・司法の最高権威を持つ絶対君主制。閣僚評議会が行政を担う。議会は諮問機関のみ'},
-  392:{name:'日本',flag:'🇯🇵',region:'東アジア',
-    food:'米・魚・出汁・醤油が基本。寿司・ラーメン・天ぷら・味噌汁。旬の食材を重視し、料理の見た目も大切にする',
-    life:'時間厳守・礼儀・場の空気を読む文化。四季に合わせた行事が多い。高齢化率が世界トップクラス',
-    religion:'神道と仏教が生活に溶け込む。多くの人が無宗教と自認しつつ、初詣・葬儀では両方の慣習に従う',
-    politics:'天皇を象徴とする立憲君主制。衆議院・参議院の二院制。内閣総理大臣が行政の長を務める議院内閣制'},
-  826:{name:'イギリス',flag:'🇬🇧',region:'欧州',
-    food:'フィッシュアンドチップス・サンデーロースト・スコーン。紅茶文化が有名。移民の影響でカレーも国民食に',
-    life:'階級意識が文化に残るが多文化社会でもある。パブが社交の場。国民保健サービス（NHS）が医療を支える',
-    religion:'英国国教会が公式宗教だが実際の信者は減少。多文化化でイスラム教・ヒンドゥー教徒も増加',
-    politics:'国王を元首とする立憲君主制。庶民院・貴族院の二院制。首相が行政を率いる議院内閣制。成文憲法なし'},
-  250:{name:'フランス',flag:'🇫🇷',region:'欧州',
-    food:'バゲット・チーズ（300種以上）・ワイン。食事をゆっくり楽しむ文化。ユネスコの無形文化遺産にも登録',
-    life:'バカンス（年5週以上の有給休暇）が文化的権利。カフェで議論する文化。世俗主義（ライシテ）が社会原則',
-    religion:'カトリックの伝統が強いが、世俗主義により公共の場での宗教表現を制限。イスラム教徒も約500万人',
-    politics:'大統領と首相が並立する半大統領制。国民議会・元老院の二院制。大統領は直接選挙で選出'},
-  276:{name:'ドイツ',flag:'🇩🇪',region:'欧州',
-    food:'ソーセージ（ブラートヴルスト）・ザウアークラウト・プレッツェル・ビール。パンだけで300種以上',
-    life:'効率・秩序・時間厳守を重視。環境意識が高くリサイクル文化が発達。仕事と余暇のバランスを大切にする',
-    religion:'プロテスタントとカトリックがほぼ同数。移民増加でイスラム教徒も増加。教会税制度が残る',
-    politics:'連邦大統領（象徴）と連邦首相（行政の長）が分離。連邦議会（下院）・連邦参議院（上院）の二院制。16州の連邦制'},
-  356:{name:'インド',flag:'🇮🇳',region:'南アジア',
-    food:'スパイスを多用したカレー・チャパティ・ダル（豆料理）。ヒンドゥー教徒は牛肉を食べない。地域ごとに大きく異なる',
-    life:'大家族で暮らす文化。カースト制の慣習が今も残る地域がある。クリケットが国民的スポーツ',
-    religion:'ヒンドゥー教が約80%。イスラム教が約14%。仏教・シク教・キリスト教なども共存。多宗教国家',
-    politics:'世界最大の有権者数を持つ連邦共和制。二院制議会（人民院・州民院）。州政府が強い権限を持つ連邦制'},
-  586:{name:'パキスタン',flag:'🇵🇰',region:'南アジア',
-    food:'ビリヤニ（スパイス炊き込みご飯）・ナン・チャイ（ミルクティー）。豚・アルコールはイスラム法で禁忌',
-    life:'イスラム法が生活規範の基盤。名誉と家族の絆を重視する文化。部族社会の慣習が地方で継続',
-    religion:'スンニ派イスラム教が国教（人口の約97%）。宗教が教育・法律・日常生活に深く関わる',
-    politics:'二院制議会（国民議会・元老院）を持つ連邦共和制。首相が行政の長。軍が伝統的に強い政治的影響力を持つ'},
-  410:{name:'韓国',flag:'🇰🇷',region:'東アジア',
-    food:'キムチ・ビビンバ・サムゲタン・ソルロンタン。辛い料理が多く、食事は大皿を囲む共同スタイル',
-    life:'儒教的な年功序列・礼儀の文化。受験競争が激しく教育熱が高い。K-POP・映画・ドラマを世界に発信',
-    religion:'無宗教・仏教・キリスト教（プロテスタント・カトリック）が混在。儒教的価値観が文化の基盤',
-    politics:'大統領を直接選挙で選ぶ大統領制。一院制国会。大統領の任期は5年で再選不可'},
-  704:{name:'ベトナム',flag:'🇻🇳',region:'東南アジア',
-    food:'フォー（米麺スープ）・バインミー・生春巻き。魚醤（ヌクマム）が基本調味料。南北で食文化が異なる',
-    life:'家族・祖先崇拝が生活の中心。バイクが主な移動手段。テト（旧正月）が最大の祭り',
-    religion:'大乗仏教・道教・儒教が融合した民間信仰が主流。カトリックも約8%。国が宗教を登録・管理する制度',
-    politics:'ベトナム共産党の一党制。党大会で方針を決め、国家主席・首相・国会議長の三権が並立する集団指導体制'},
+    lang:'アラビア語（公用語）。正則アラビア語（フスハー）と口語のアラビア語方言（アーンミーヤ）が並存',
+    politics:'国王が立法・行政・司法の最高権威を持つ絶対君主制。閣僚評議会が行政を担う。議会は諮問機関のみ',
+    comm:{
+      no:'直接のノーは失礼とされることも。「In sha\'Allah（神の意志のままに）」が断りを意味することがある',
+      silence:'穏やかな沈黙は会話の一部として自然に受け入れられる',
+      eye:'同性間では誠実さの表れ。異性間では慎む傾向。女性への長い目線は失礼',
+      emotion:'公共での感情表出は性別・場に応じる。男性同士の感情表現（手をつなぐ等）は友情の表れで普通',
+      gesture:'左手の使用を避ける（不浄とされる）。人差し指で人を指すのは無礼。靴の底を見せるのは侮辱'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'男女ともに肌の露出を厳しく制限。女性は公共の場でアバヤ（黒いローブ）着用が慣習（観光客は緩和）',
+      photo:'宗教施設・政府機関・軍施設・女性への無断撮影は厳禁。ラマダン中の飲食撮影も配慮が必要',
+      banned:'豚肉・アルコール完全禁止。ポルノ・VPNの一部使用制限。イスラム教を侮辱する言動は禁止',
+      lgbt:'同性愛行為は違法（鞭打ち・禁固刑・死刑の可能性）。公的な場でのLGBT活動は禁止'
+    },
+    values:{
+      time:'礼拝時間（1日5回）を最優先する生活リズム。時間の感覚はやや柔軟',
+      collective:'部族・家族・イスラムコミュニティへの帰属意識が最優先。個人より共同体の名誉を重視',
+      tip:'任意だが歓迎される。10〜15%程度。高級ホテル・レストランでは一般的',
+      gift:'高級品・香水・甘い菓子が定番。豚革製品・アルコール・未婚女性へのプライベートな贈り物は不可',
+      color:'緑はイスラム教の神聖な色（国旗にも使用）。白は純潔。特に数字の厳格な禁忌はない'
+    }},
+  784:{name:'UAE',flag:'🇦🇪',region:'中東',
+    food:'マンディ（スパイスご飯と肉）・ハリース・シャウルマ。豚・酒は制限されるがドバイでは観光客向けに一部許容',
+    life:'人口の約88%が外国人労働者。超近代的なインフラと伝統的なベドウィン文化が共存。石油収入で急速に発展',
+    religion:'スンニ派イスラム教が国教。信仰の自由は保障されており、他宗教の礼拝施設も存在',
+    lang:'アラビア語が公用語。英語がビジネス・日常の共通語として機能。ヒンディー語・ウルドゥー語も広く話される',
+    politics:'7首長国が連合した連邦絶対君主制。連邦最高評議会（各首長国の首長）が最高権力機関。アブダビが主導'},
+  368:{name:'イラク',flag:'🇮🇶',region:'中東',
+    food:'マスグーフ（川魚の炭火焼き）・ケバブ・ティーカ。ナツメヤシが文化的に重要な食材。チャイ（甘い紅茶）が必需品',
+    life:'メソポタミア文明の発祥地。シーア派・スンニ派・クルド人の三大勢力が共存。戦後の復興が続く社会',
+    religion:'イスラム教が約97%（シーア派約60%・スンニ派約37%）。宗派対立が政治・社会に大きく影響',
+    lang:'アラビア語とクルド語が公用語。クルド自治区ではクルド語が日常的に使用される二言語社会',
+    politics:'議院内閣制共和国。首相が行政の長で慣例的にシーア派。大統領はクルド人・議長はスンニ派と宗派配分制'},
+  400:{name:'ヨルダン',flag:'🇯🇴',region:'中東',
+    food:'マンサフ（ヨーグルトソースのラム肉ご飯）が国民食。ファラフェル・フムス・ムサッカも定番。アラブ料理全般が充実',
+    life:'中東の安定した国として知られる。パレスチナ難民を多く受け入れ人口の約40%が難民・難民子孫。観光地ペトラが有名',
+    religion:'スンニ派イスラム教が約97%。キリスト教徒も約3%いて、中東では比較的共存が進んでいる',
+    lang:'アラビア語（公用語）。英語も教育・ビジネスで広く使用。ハシミテ王家がメッカの守護者としての歴史を持つ',
+    politics:'国王が実権を持つ立憲君主制。二院制議会（参議院は国王が任命・下院は選挙）。首相が行政を統括'},
   792:{name:'トルコ',flag:'🇹🇷',region:'中東・欧州',
     food:'ケバブ・メゼ（前菜盛り合わせ）・バクラヴァ（蜂蜜菓子）。チャイ（紅茶）を一日何杯も飲む文化',
     life:'欧州とアジアの文化が混交するボスポラス海峡に位置。世俗主義の伝統とイスラム的慣習が並存',
     religion:'スンニ派イスラム教が多数（約99%）。建国以来の世俗主義（ライクリク）の伝統もある',
+    lang:'トルコ語（公用語）。1928年にアラビア文字からラテン文字に切り替えた。チュルク語族の最大言語',
     politics:'大統領が行政・立法に強い権限を持つ大統領制（2017年改憲で移行）。一院制大国民議会'},
+
+  // ── ヨーロッパ ──
+  826:{name:'イギリス',flag:'🇬🇧',region:'欧州',
+    food:'フィッシュアンドチップス・サンデーロースト・スコーン。紅茶文化が有名。移民の影響でカレーも国民食に',
+    life:'階級意識が文化に残るが多文化社会でもある。パブが社交の場。国民保健サービス（NHS）が医療を支える',
+    religion:'英国国教会が公式宗教だが実際の信者は減少。多文化化でイスラム教・ヒンドゥー教徒も増加',
+    lang:'英語（事実上の公用語）。ウェールズ語・スコットランド・ゲール語・アイルランド語も公認地域言語',
+    politics:'国王を元首とする立憲君主制。庶民院・貴族院の二院制。首相が行政を率いる議院内閣制。成文憲法なし',
+    comm:{
+      no:'遠回しな婉曲表現が多い。「That\'s interesting」「I\'ll see what I can do」が実質的な断り',
+      silence:'「awkward silence（気まずい沈黙）」として積極的に埋めようとする。スモールトーク文化が発達',
+      eye:'適度なアイコンタクトが礼儀。凝視は失礼。会話中は時折視線を外すのが自然',
+      emotion:'感情を抑制することが美徳（"stiff upper lip"）。公共での強い感情表出は品がないとみなされる',
+      gesture:'Vサインは手の甲を相手に向けると侮辱。手のひら側は平和・勝利。列に割り込むのは最大の非礼'
+    },
+    rules:{
+      traffic:'左側通行（元英国植民地の多くも同様）',
+      dress:'スマートカジュアルが基本。フォーマルな場では的確な服装を求める階級意識がある',
+      photo:'基本自由。一部の政府施設・宮殿は制限あり',
+      banned:'特になし。ただし公共での飲酒は地域によって規制',
+      lgbt:'同性婚は2014年に合法化（イングランド・ウェールズ）。受容度は高く多様性を重視する社会'
+    },
+    values:{
+      time:'時間厳守が基本。列（queue）への礼儀は非常に重要で割込みは最悪の行為',
+      collective:'個人のプライバシーを非常に重視。他人の私事への干渉を嫌う個人主義',
+      tip:'慣習あり。レストランで10〜15%。サービスチャージ明記の場合は不要',
+      gift:'感謝の表現として一般的。カードのメッセージを重視。包装より気持ち',
+      color:'黒は葬儀。赤いポピーは戦没者追悼の象徴。13は不吉な数字'
+    }},
+  250:{name:'フランス',flag:'🇫🇷',region:'欧州',
+    food:'バゲット・チーズ（300種以上）・ワイン。食事をゆっくり楽しむ文化。ユネスコの無形文化遺産にも登録',
+    life:'バカンス（年5週以上の有給休暇）が文化的権利。カフェで議論する文化。世俗主義（ライシテ）が社会原則',
+    religion:'カトリックの伝統が強いが、世俗主義により公共の場での宗教表現を制限。イスラム教徒も約500万人',
+    lang:'フランス語（公用語）。ブルトン語・アルザス語・バスク語などの地域言語も。世界で約3億人が話すフランコフォニー圏',
+    politics:'大統領と首相が並立する半大統領制。国民議会・元老院の二院制。大統領は直接選挙で選出',
+    comm:{
+      no:'比較的直接的に「Non」と言う。論争・反論を知的な行為として歓迎する文化',
+      silence:'会話の一部として自然に受け入れる。無意味なスモールトークを好まない人も多い',
+      eye:'アイコンタクトは誠実さ・自信の表れ。ビジネスでも社交でも重要',
+      emotion:'感情表現は比較的自由。公共でのキス・抱擁も普通。情熱的な議論・口論も珍しくない',
+      gesture:'頬へのキス（ビズ）が挨拶。地域によって2〜4回。肩をすくめる（ハウスラン）は「知らない・どうでもいい」'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'おしゃれへの関心が高い。教会では肩・膝を隠す服装。ビジネスはエレガントを重視',
+      photo:'基本自由。美術館は作品ごとに規定。エッフェル塔の夜間ライトアップの商業利用には著作権あり',
+      banned:'公共の場でのニカブ・ブルカ着用禁止（ライシテ政策）。公立学校での宗教的シンボル着用禁止',
+      lgbt:'同性婚は2013年に合法化。社会的受容度は高く、パリはLGBT+フレンドリーな都市として知られる'
+    },
+    values:{
+      time:'社交の遅刻は多少許容。ビジネスは厳守。昼食を2時間かけるのは文化的権利',
+      collective:'個人の自由・権利を重視する強い個人主義。ただし家族の絆も重視',
+      tip:'任意。サービス料は法律で価格に含まれるが小銭を置くのは普通（強制ではない）',
+      gift:'ワイン・花・チョコが定番。菊は葬儀用なので不可。センスのよい選択を重視',
+      color:'白は結婚・純潔。黒は葬儀。特に数字の禁忌は少ないが13は不吉とされる'
+    }},
+  276:{name:'ドイツ',flag:'🇩🇪',region:'欧州',
+    food:'ソーセージ（ブラートヴルスト）・ザウアークラウト・プレッツェル・ビール。パンだけで300種以上',
+    life:'効率・秩序・時間厳守を重視。環境意識が高くリサイクル文化が発達。仕事と余暇のバランスを大切にする',
+    religion:'プロテスタントとカトリックがほぼ同数。移民増加でイスラム教徒も増加。教会税制度が残る',
+    lang:'ドイツ語（公用語）。ゲルマン語派の主要言語で英語・オランダ語と同系統。約1億人が母語話者',
+    politics:'連邦大統領（象徴）と連邦首相（行政の長）が分離。連邦議会（下院）・連邦参議院（上院）の二院制。16州の連邦制',
+    comm:{
+      no:'非常に直接的。「Nein」をはっきり言う文化。曖昧な返答は肯定と解釈される',
+      silence:'問題なく受け入れる。無意味なスモールトークは苦手な人が多い。沈黙＝思考中',
+      eye:'アイコンタクトは誠実さ・敬意の表れ。目を合わせないと信頼されない',
+      emotion:'公共での感情表出は控えめ。感情より論理・事実を重視するコミュニケーションスタイル',
+      gesture:'額に人差し指を当てるのは「馬鹿」の侮辱ジェスチャー。握手は最初の挨拶で必須'
+    },
+    rules:{
+      traffic:'右側通行。自転車レーンへの歩行者侵入は厳禁',
+      dress:'実用性重視。場に合った服装。ビジネスはスーツが基本',
+      photo:'個人のプライバシーへの意識が高くGDPR（個人情報保護規則）が厳格。無断撮影・公開は違法',
+      banned:'ナチス象徴（ハーケンクロイツ等）の表示・使用は法律で禁止。ホロコースト否定発言も違法',
+      lgbt:'同性婚は2017年に合法化。社会的受容度は高い。LGBTの権利保護が充実'
+    },
+    values:{
+      time:'非常に厳格な時間厳守文化。遅刻は深刻な失礼。「pünktlich（時間通り）」が重要な価値観',
+      collective:'個人の権利・プライバシーを尊重しつつ、秩序・ルール遵守を重んじる',
+      tip:'任意。端数を切り上げる程度（5〜10%）。「Stimmt so（お釣りはいらない）」と伝える',
+      gift:'シンプルで実用的なものが好まれる。ワイン・チョコが定番。丁寧な包装より品質を重視',
+      color:'特に禁忌はないが黒・白の組み合わせは葬儀のイメージ。13は不吉な数字'
+    }},
+  380:{name:'イタリア',flag:'🇮🇹',region:'欧州',
+    food:'パスタ・ピザ・リゾット・エスプレッソ。地域ごとに食文化が大きく異なる。食の豊かさと家族の食卓を重視',
+    life:'家族の絆が社会の核。ファッション・デザイン・芸術の文化大国。南北格差（工業の北・農業の南）が長年の課題',
+    religion:'カトリックが約85%。バチカン市国を国内に持つカトリックの精神的中心地。宗教的慣習は維持されつつも世俗化が進む',
+    lang:'イタリア語（公用語）。ラテン語から派生したロマンス語。シチリア語・ヴェネツィア語など地域方言が豊富',
+    politics:'大統領（象徴）と首相（行政の長）が分離。二院制議会（下院・元老院）。連立政権が頻繁に交代する不安定な政治文化'},
+  724:{name:'スペイン',flag:'🇪🇸',region:'欧州',
+    food:'パエリャ・タパス・ガスパチョ・ハモン。遅い夕食（21〜23時）と午後のシエスタの文化。ワイン・オリーブオイルが欠かせない',
+    life:'午後2〜4時のシエスタ（昼休み）文化、遅い夕食の習慣。フラメンコ・闘牛などの伝統文化が根付く',
+    religion:'カトリックが歴史的に強い（約70%）が近年は世俗化が進む。スペイン内戦（1936-39）の記憶が社会に残る',
+    lang:'スペイン語（カスティーリャ語）が公用語。カタルーニャ語・バスク語・ガリシア語も地域公用語として認定',
+    politics:'国王を元首とする立憲君主制。上院・下院の二院制。首相が行政の長を務める議院内閣制。17の自治州に分権'},
+  528:{name:'オランダ',flag:'🇳🇱',region:'欧州',
+    food:'ニシンの塩漬け・パンネクック（パンケーキ）・ストロープワッフル（シロップワッフル）。チーズ（ゴーダ・エダム）が名産',
+    life:'自転車が主要交通手段の自転車大国。個人の自由と寛容さを重視するリベラルな社会。国土の4分の1が海面下',
+    religion:'無宗教が最多（約50%）。かつてはカルヴァン派プロテスタント・カトリックが主流。世俗化が最も進んだ国の一つ',
+    lang:'オランダ語（公用語）。フリジア語が地域公用語。英語教育水準が高く、非英語圏で英語能力トップクラス',
+    politics:'国王を元首とする立憲君主制。上院・下院の二院制。首相が行政の長。比例代表制で多党連立が常態'},
+  752:{name:'スウェーデン',flag:'🇸🇪',region:'欧州',
+    food:'ミートボール・ニシン料理・クリスプブレッド。コーヒー休憩（フィーカ）の文化。夏のザリガニパーティーも恒例',
+    life:'世界最高水準の福祉国家。育児休暇・男女平等・労働者権利が充実。ラゴム（ちょうどよい）の精神',
+    religion:'プロテスタント（ルター派）の伝統があるが現在は無宗教が最多。スウェーデン教会は国教会から2000年に分離',
+    lang:'スウェーデン語（公用語）。北ゲルマン語派。サーミ語など少数民族語も公認。英語能力は世界最高水準',
+    politics:'国王を元首とする立憲君主制。一院制議会（リクスダーグ）。首相が行政の長を務める議院内閣制'},
+  578:{name:'ノルウェー',flag:'🇳🇴',region:'欧州',
+    food:'サーモン・タラの干物（クリッペフィスク）・ブラウンチーズ。漁業・北極圏の自然が食文化を形成',
+    life:'世界幸福度ランキング上位の常連。豊かな石油収入を国民全員の富（政府年金基金）として管理。アウトドア文化が盛ん',
+    religion:'プロテスタント（ルター派）が歴史的主流だが無宗教が増加。ノルウェー教会は2017年に国教会から分離',
+    lang:'ノルウェー語（公用語）。ブークモール（書き言葉）とニューノシュク（新ノルウェー語）の2つの公式書記形式がある',
+    politics:'国王を元首とする立憲君主制。一院制議会（ストーティング）。首相が行政の長。高い透明性と低い汚職で知られる'},
+  616:{name:'ポーランド',flag:'🇵🇱',region:'欧州',
+    food:'ビゴス（肉とキャベツの煮込み）・ピエロギ（水餃子）・ジュレク（サワーライ麦スープ）。ウォッカが有名',
+    life:'カトリック信仰が文化の核。第二次世界大戦の記憶（ホロコースト・ソ連占領）が国民意識に強く影響。EU加盟で急速に発展',
+    religion:'カトリックが約85%でヨーロッパ最高水準の信仰厚さ。教会が政治にも影響力を持つ',
+    lang:'ポーランド語（公用語）。西スラブ語派に属し、ラテン文字で表記。複雑な格変化を持つ。約5000万人が話す',
+    politics:'大統領（象徴・一部権限あり）と首相（行政の長）が並立する半大統領制。二院制議会（下院・上院）'},
+  804:{name:'ウクライナ',flag:'🇺🇦',region:'欧州',
+    food:'ボルシチ（ビーツのスープ）・ヴァレニキ（水餃子）・サロ（豚の脂身）。ボルシチは自国起源を主張しロシアと論争',
+    life:'ロシアの全面侵攻（2022年〜）が続く戦時社会。欧州最大の国土面積（ロシアを除く）。農業大国で「欧州の穀倉」と呼ばれる',
+    religion:'ウクライナ正教会（独立派・モスクワ派が分裂）が多数。カトリック（ギリシャ典礼カトリック）も西部に多い',
+    lang:'ウクライナ語（唯一の公用語）。キリル文字で表記。ロシア語も日常的に使われてきたが、侵攻後は公的場面での使用が制限',
+    politics:'大統領と首相が並立する半大統領制共和国。一院制議会（最高会議）。EU・NATO加盟を目指している'},
+  300:{name:'ギリシャ',flag:'🇬🇷',region:'欧州',
+    food:'スブラキ（串焼き）・ムサカ（ナスのグラタン）・スパナコピタ（ほうれん草パイ）。オリーブオイル・フェタチーズが必需品',
+    life:'西洋文明の発祥地。家族と食事を最重要視する文化。2010年代の経済危機が社会に深刻な影響を残す',
+    religion:'ギリシャ正教会が国教（約97%）。宗教は国家と深く結びつき、司祭の給与は国が負担',
+    lang:'ギリシャ語（公用語）。世界最長の文書化された歴史を持つ言語（3400年以上）。独自のアルファベットはラテン文字の祖先',
+    politics:'議会共和制。一院制議会（ギリシャ議会）。首相が行政の長。大統領は象徴的役割。EU・NATOの加盟国'},
+  40:{name:'オーストリア',flag:'🇦🇹',region:'欧州',
+    food:'ウィンナーシュニッツェル（子牛カツ）・ザッハートルテ（チョコケーキ）・グラーシュ。コーヒーハウス文化が有名',
+    life:'音楽（モーツァルト・ベートーベン）・美術・建築の文化大国。ハプスブルク帝国の遺産が随所に残る',
+    religion:'カトリックが約57%。世俗化が進みつつも宗教文化的な影響は強い。クリスマス市（クリスマスマーケット）が世界的に有名',
+    lang:'ドイツ語（公用語）。バイエルン方言が基盤のオーストリア・ドイツ語はドイツ本土とは発音・語彙が異なる',
+    politics:'大統領（直接選挙）と首相（行政の長）が並立する連邦共和制。二院制議会。9州の連邦制'},
+  756:{name:'スイス',flag:'🇨🇭',region:'欧州',
+    food:'チーズフォンデュ・ラクレット・ロシュティ（ジャガイモ料理）。チョコレートが世界的に有名。4言語圏で料理も多様',
+    life:'永世中立国。4つの言語文化が共存するユニークな国民性。直接民主制（国民投票）が高頻度で実施される',
+    religion:'カトリック（38%）とプロテスタント（26%）がほぼ拮抗。宗教改革（カルヴァン）の発祥地の一つ',
+    lang:'ドイツ語・フランス語・イタリア語・ロマンシュ語の4言語が公用語。地域によって完全に異なる言語環境',
+    politics:'連邦大統領（任期1年の輪番制）と連邦評議会（7名の閣僚による合議制）。二院制連邦議会。直接民主主義が発達'},
+  643:{name:'ロシア',flag:'🇷🇺',region:'欧州・中央アジア',
+    food:'ボルシチ（ビーツのスープ）・ペリメニ（水餃子）・黒パン。寒冷地ゆえ保存食・発酵食品が発達',
+    life:'広大な国土に多民族が暮らす。夏の白夜・冬の極寒が生活リズムに影響。ダーチャ（別荘）文化が根強い',
+    religion:'ロシア正教会が歴史的・文化的な中心。礼拝・祭日・美術・建築に正教の影響が色濃く残る',
+    lang:'ロシア語（公用語）。東スラブ語派でキリル文字を使用。約1億7000万人の母語話者を持つ国連公用語の一つ',
+    politics:'大統領が強い権限を持つ体制。二院制議会（国家会議・連邦会議）。89の連邦構成主体からなる連邦制'},
+
+  // ── アフリカ ──
+  818:{name:'エジプト',flag:'🇪🇬',region:'アフリカ・中東',
+    food:'コシャリ（米・麺・豆の混合料理）・フール（そら豆のペースト）・タアミーヤ（フェラフェル）。ナイル川の恵みが食文化を支える',
+    life:'世界最古の文明の一つ。ピラミッドなどの遺跡と現代社会が混在。人口の大半がナイル川デルタに集中',
+    religion:'スンニ派イスラム教が約90%。コプト・キリスト教が約10%で中東最大のキリスト教徒コミュニティ',
+    lang:'アラビア語（公用語）。エジプト・アラビア語方言は映画・音楽の普及でアラブ世界で最も広く理解される方言',
+    politics:'大統領が強い権限を持つ共和制。二院制議会（代議院・元老院）。2013年のクーデター後は軍の影響が強い体制'},
+  504:{name:'モロッコ',flag:'🇲🇦',region:'アフリカ・中東',
+    food:'タジン（土鍋煮込み）・クスクス・ハリーラ（ラマダンのスープ）。スパイスとミントティーの文化',
+    life:'ベルベル人・アラブ人・サハラ系の混合文化。スークと呼ばれる伝統市場が生活の中心。フランスの植民地遺産が残る',
+    religion:'スンニ派イスラム教が国教（約99%）。国王がイスラムの守護者「信者の長」を兼任',
+    lang:'アラビア語とタマジクト語（ベルベル語）が公用語。フランス語・スペイン語も広く使用される多言語社会',
+    politics:'国王が実権を持つ立憲君主制。二院制議会（代議院・顧問院）。首相が行政を統括するが国王の権限が優越'},
+  566:{name:'ナイジェリア',flag:'🇳🇬',region:'アフリカ',
+    food:'ジョロフライス（スパイスご飯）・エグシスープ（ウリの種スープ）・スワロウ（芋のもち）。500以上の民族ごとに食文化が異なる',
+    life:'アフリカ最大の人口（約2億2000万人）・経済大国。ナイジャーデルタの石油と農業が二大産業。ノリウッド映画産業が世界第2位の規模',
+    religion:'南部はキリスト教、北部はイスラム教で、国が宗教的に二分される。各地に伝統的なアフリカ信仰も残る',
+    lang:'英語（公用語）。ハウサ語・ヨルバ語・イボ語が主要民族語（各3000〜5000万人の話者）。500以上の言語が話される',
+    politics:'大統領制連邦共和国。二院制議会（上院・下院）。36州と連邦首都直轄地からなる連邦制'},
+  231:{name:'エチオピア',flag:'🇪🇹',region:'アフリカ',
+    food:'インジェラ（発酵フラットブレッド）にワット（スパイスシチュー）をのせて手で食べる独特のスタイル。コーヒー発祥地',
+    life:'アフリカ最古の独立国（イタリアの短期占領を除く）。エチオピア暦・文字（ゲエズ文字）を独自に保持。農業・牧畜が主要産業',
+    religion:'エチオピア正教会（テワヘド）が約43%。イスラム教が約34%。世界最古級のキリスト教国の一つ',
+    lang:'アムハラ語（公用語）。ゲエズ文字（エチオピア文字）で表記。80以上の民族語が話される多言語国家。オロモ語話者が最多',
+    politics:'連邦民主共和国。首相が行政の長。10の民族州と2自治市からなる民族連邦制。長期内戦（ティグライ紛争）が社会に影響'},
+  404:{name:'ケニア',flag:'🇰🇪',region:'アフリカ',
+    food:'ウガリ（とうもろこしの粥）・スクマウィキ（青菜炒め）・ニャマチョマ（炭火焼き肉）。紅茶に砂糖とミルクを大量に入れるチャイが定番',
+    life:'42の民族が共存。野生動物サファリ観光が重要な産業。マラソン王国として知られ、リオン・ランナーが世界を席巻',
+    religion:'プロテスタント（47%）・カトリック（23%）・イスラム教（11%）が共存。伝統的な民間信仰も根付く',
+    lang:'スワヒリ語と英語が公用語。スワヒリ語は東アフリカで広く使われる共通語。42以上の民族語が話される',
+    politics:'大統領制共和国。二院制議会（国民議会・上院）。2010年の新憲法で分権化が進み47の郡に地方権限が移譲'},
   710:{name:'南アフリカ',flag:'🇿🇦',region:'アフリカ',
     food:'ブライ（バーベキュー）・ボボティ（スパイス肉のオーブン料理）・ビルトング（干し肉）。11の公用語と同様、料理も多様',
     life:'アパルトヘイト後の多文化・多人種社会。都市部と農村部の経済格差が大きい。ラグビー・サッカーが盛ん',
     religion:'キリスト教が約80%。伝統的なアフリカの民間信仰も根強く、イスラム教・ヒンドゥー教も存在',
+    lang:'11の言語が公用語（ズールー語・コサ語・アフリカーンス語・英語など）。世界で最も多くの公用語を持つ国の一つ',
     politics:'大統領が国家元首と行政府の長を兼任する共和制。国民議会・州代表評議会の二院制。ANCが長期政権を担う'},
-  36:{name:'オーストラリア',flag:'🇦🇺',region:'オセアニア',
-    food:'バーベキュー（バービー）文化が根強い。ミートパイ・ベジマイト（酵母ペースト）が定番。多文化の影響でアジア料理も浸透',
-    life:'アウトドア・スポーツ文化が盛ん。移民国家で多文化主義を採用。先住民アボリジニの文化も重要な一部',
-    religion:'キリスト教徒が多いが無宗教も増加中。多文化社会のため仏教・イスラム教・ヒンドゥー教なども',
-    politics:'英国国王を元首とする連邦立憲君主制。上院・下院の二院制連邦議会。首相が行政の長を務める議院内閣制'},
+
+  // ── 南北アメリカ ──
+  840:{name:'アメリカ',flag:'🇺🇸',region:'北米',
+    food:'ハンバーガー・ステーキ・BBQが代表的。移民の影響で中華・メキシコ・イタリア料理も日常的。食事量が多く外食文化が強い',
+    life:'車移動が基本の郊外型生活。個人の自由と自己責任を重視する文化。祝日は家族・友人でバーベキューが定番',
+    religion:'キリスト教（プロテスタント・カトリック）が多数だが信仰は個人の自由。無宗教も増加傾向',
+    lang:'英語（事実上の公用語。連邦レベルの公用語法なし）。スペイン語が第二言語として広く普及。移民の影響で300以上の言語が話される',
+    politics:'大統領を国民が選ぶ大統領制。上院・下院の二院制議会。50州それぞれが独自の法律を持つ連邦制',
+    comm:{
+      no:'比較的直接的だが「I\'ll think about it」「Maybe later」は婉曲的断りのことが多い',
+      silence:'沈黙は不快・気まずさの表れとして積極的に埋めようとする。スモールトーク文化が非常に発達',
+      eye:'アイコンタクトは誠実さ・自信の証。目を合わせない人は信頼できないとみなされる',
+      emotion:'感情表現は比較的自由。公共でも笑い・怒りを表出。「How are you?」は挨拶で実際の答えを期待しない',
+      gesture:'サムズアップは肯定。中指は最大の侮辱。握手は強くしっかりと。ハグも友人間では普通'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'場所による。ビジネスカジュアルが多い。礼拝施設でも比較的カジュアル可',
+      photo:'基本自由だが軍・政府施設・空港は禁止。他人をSNSに無断投稿することへの意識は高まっている',
+      banned:'特になし。ただし州によって大麻の合法性が異なる',
+      lgbt:'同性婚は連邦法で合法（2022年尊重法）。州によって条例レベルで差あり。受容度は地域で大きく異なる'
+    },
+    values:{
+      time:'時間厳守が基本。「fashionably late」は社交パーティのみ許容。ビジネスは特に厳格',
+      collective:'個人主義の象徴的文化。自己責任・自立・個人の自由を最大の価値とする',
+      tip:'必須。レストランでは15〜20%が標準。渡さないのは深刻な失礼とみなされる',
+      gift:'包装より中身を重視。その場で開封するのが一般的。クリスマスプレゼント文化が発達',
+      color:'白は純潔・結婚。黒は葬儀。赤白青は愛国色。13は一般的に不吉（13階のないビルも存在）'
+    }},
+  124:{name:'カナダ',flag:'🇨🇦',region:'北米',
+    food:'プーティン（フライドポテトにグレービーソースとチーズ）・メープルシロップ・バノック（先住民パン）。多文化の影響で食文化は多様',
+    life:'多文化主義を国家政策に掲げる移民国家。フランス系（ケベック州）と英語系の二文化が共存。アウトドア・自然文化が盛ん',
+    religion:'カトリック（約38%）・プロテスタント（約27%）が多数だが無宗教も増加。先住民の伝統信仰も重要',
+    lang:'英語とフランス語が公用語。ケベック州ではフランス語が主言語。先住民の言語保護にも取り組む',
+    politics:'英国国王を元首とする連邦立憲君主制。上院・下院の二院制連邦議会。首相が行政の長。10州3準州の連邦制'},
+  484:{name:'メキシコ',flag:'🇲🇽',region:'中米・カリブ',
+    food:'タコス・エンチラーダス・ワカモレ・チョコレート（テオブロマ）。トウモロコシ・唐辛子・豆が基本食材。ユネスコ無形文化遺産',
+    life:'アステカ・マヤなどの先住民文化とスペイン文化の融合。家族・宗教が社会の核。死者の日（ディア・デ・ロス・ムエルトス）が有名',
+    religion:'カトリックが約80%。先住民の伝統信仰とカトリックが融合したメスティーソ信仰形態も。グアダルーペの聖母への信仰が特に深い',
+    lang:'スペイン語（事実上の公用語）。ナワトル語・マヤ語など68の先住民族語も公認。世界最大のスペイン語話者人口',
+    politics:'大統領制連邦共和国。二院制議会（下院・上院）。31州と首都圏からなる連邦制'},
   76:{name:'ブラジル',flag:'🇧🇷',region:'南米',
     food:'フェイジョアーダ（黒豆と豚肉の煮込み）・シュラスコ（肉の串焼き）・カイピリーニャ（カクテル）。多民族の食文化が融合',
     life:'カーニバル・サッカー・音楽（サンバ・ボサノバ）が文化の象徴。家族の絆が強く大家族で集まる文化',
     religion:'カトリックの信者数が世界最多の国。近年はペンテコスタル派（福音派）が急成長。アフロブラジル宗教も存在',
-    politics:'大統領が国家元首と行政府の長を兼任する大統領制連邦共和国。上院・下院の二院制。26州と連邦直轄区からなる連邦制'}
+    lang:'ポルトガル語（公用語）。南米で唯一のポルトガル語圏。先住民語も200以上残存。約2億人が話す世界6位の話者人口',
+    politics:'大統領が国家元首と行政府の長を兼任する大統領制連邦共和国。二院制議会（上院・下院）。26州と連邦直轄区からなる連邦制',
+    comm:{
+      no:'直接的な断りよりも「talvez（たぶん）」「depois（後で）」などで濁すことが多い',
+      silence:'沈黙は珍しく居心地悪さを示す。会話は賑やかで重なり合っても気にしない',
+      eye:'アイコンタクトは誠実さと関心の表れ。目を合わせないと信頼されにくい',
+      emotion:'感情表現は非常に活発。抱擁・キスが頻繁な挨拶。喜びも悲しみも率直に表出',
+      gesture:'OKサイン（指輪）は侮辱的なジェスチャー。サムズアップが肯定。近距離での会話が普通'
+    },
+    rules:{
+      traffic:'右側通行',
+      dress:'ビーチ文化が根付き露出度は高め。ビジネスはスーツが基本。教会では保守的な服装',
+      photo:'基本自由。ファベーラ（スラム）での撮影はガイドなしでは危険',
+      banned:'特になし。大麻は非犯罪化（少量所持は罰則なし）',
+      lgbt:'同性婚は2013年に合法化。世界最大のプライドパレードがサンパウロで開催。受容度は高い'
+    },
+    values:{
+      time:'「Brazilian time」として遅刻が広く許容される。社交では30分〜1時間の遅れは普通',
+      collective:'家族・友人のつながりを最重視。「jeitinho brasileiro（ブラジル流の融通）」が問題解決法',
+      tip:'慣習あり。レストランでは10%（法律でサービス料に含まれることも）',
+      gift:'温かみのある贈り物文化。手土産は喜ばれる。紫は喪の色なので避ける',
+      color:'紫は葬儀の色（贈り物では避ける）。緑・黄は国家色で愛される。数字の禁忌は少ない'
+    }},
+  32:{name:'アルゼンチン',flag:'🇦🇷',region:'南米',
+    food:'アサード（牛肉のバーベキュー）・エンパナーダ（肉入りパイ）・マテ茶。牛肉消費量が世界トップクラス。ヨーロッパ移民の影響が強い',
+    life:'タンゴ発祥の地。欧州系移民（イタリア・スペイン）の文化的影響が強い。サッカーへの熱狂が国民的アイデンティティ',
+    religion:'カトリックが約62%。フランシスコ教皇（ホルヘ・ベルゴリオ）はアルゼンチン出身の初のラテンアメリカ出身教皇',
+    lang:'スペイン語（公用語）。アルゼンチン・スペイン語は「ボス（ヴォス）」の使用など独特の変種。イタリア語の影響も強い',
+    politics:'大統領制連邦共和国。二院制議会（上院・下院）。23州と自治市ブエノスアイレスからなる連邦制'},
+  152:{name:'チリ',flag:'🇨🇱',region:'南米',
+    food:'セビーチェ（魚介のライム漬け）・カサエラ（肉と野菜のスープ）・エンパナーダ。細長い国土により北は砂漠、南は寒冷で食材が多様',
+    life:'アンデス山脈と太平洋に挟まれた細長い国（南北4270km）。世界最長の銅産出国。1973年のクーデターと民主化の歴史が国民意識に影響',
+    religion:'カトリックが約45%。近年は急速に世俗化・プロテスタント化が進む。先住民マプーチェの伝統信仰も存在',
+    lang:'スペイン語（公用語）。マプドゥングン語など先住民語も話されるがスペイン語が圧倒的に優勢',
+    politics:'大統領制共和国。二院制議会（下院・上院）。大統領の任期は4年で再選不可。左右の政治対立が活発'},
+  170:{name:'コロンビア',flag:'🇨🇴',region:'南米',
+    food:'バンデハ・パイサ（豆・ご飯・肉・卵の盛り合わせ）・アヒアコ（チキンスープ）・コーヒー。コロンビアコーヒーは世界的名産',
+    life:'多様な地形（熱帯雨林・アンデス・海岸）が生活文化に影響。50年以上の内戦（FARC）が2016年に和平。コーヒー農家の文化',
+    religion:'カトリックが約79%。近年はプロテスタントの福音派が増加。先住民・アフロコロンビア系の伝統信仰も共存',
+    lang:'スペイン語（公用語）。先住民語65言語・クレオール語2言語も公認。カリブ海岸方言とアンデス方言で大きく異なる',
+    politics:'大統領制共和国。二院制議会（上院・下院）。32県と首都ボゴタ特別区からなる。近年は和平・改革プロセスが進行'},
+
+  // ── オセアニア ──
+  36:{name:'オーストラリア',flag:'🇦🇺',region:'オセアニア',
+    food:'バーベキュー（バービー）文化が根強い。ミートパイ・ベジマイト（酵母ペースト）が定番。多文化の影響でアジア料理も浸透',
+    life:'アウトドア・スポーツ文化が盛ん。移民国家で多文化主義を採用。先住民アボリジニの文化も重要な一部',
+    religion:'キリスト教徒が多いが無宗教も増加中。多文化社会のため仏教・イスラム教・ヒンドゥー教なども',
+    lang:'英語（事実上の公用語）。アボリジニの言語が約250（うち活発に使用されているのは約20）。移民の影響でオーストラリアは多言語社会',
+    politics:'英国国王を元首とする連邦立憲君主制。上院・下院の二院制連邦議会。首相が行政の長を務める議院内閣制',
+    comm:{
+      no:'比較的直接的だがユーモアで包むことが多い。「No worries（大丈夫）」が万能フレーズ',
+      silence:'比較的普通に受け入れる。リラックスしたコミュニケーションスタイルを好む',
+      eye:'誠実さの表れとして自然なアイコンタクトが重要',
+      emotion:'感情表現は比較的自由。「Tall poppy syndrome（目立つ人を引き下げる文化）」への意識あり',
+      gesture:'サムズアップは肯定。握手が基本の挨拶。友人間ではハグも普通'
+    },
+    rules:{
+      traffic:'左側通行',
+      dress:'カジュアル文化が強い。ビジネスでもスマートカジュアルが多い',
+      photo:'基本自由。先住民聖地での撮影は許可が必要。一部の野生動物への接近・撮影にも規制',
+      banned:'特定の外来植物・動物の持込は厳禁（生態系保護）。税関は世界で最も厳格な部類',
+      lgbt:'同性婚は2017年に合法化。社会的受容度は高くシドニーのプライドパレードは世界的に有名'
+    },
+    values:{
+      time:'比較的時間厳守だが「No worries」精神でストレスは少ない',
+      collective:'個人主義だが「mateship（仲間意識）」を重視。平等主義的な文化で権威を嫌う傾向',
+      tip:'任意。強制されないが良いサービスには10%程度渡すことも',
+      gift:'感謝の表現として一般的。ワイン・チョコが定番',
+      color:'特に禁忌はない。先住民アートの色（赤茶・黄土・黒）に文化的意味がある'
+    }},
+  554:{name:'ニュージーランド',flag:'🇳🇿',region:'オセアニア',
+    food:'ハンギ（マオリの蒸し料理）・ラム肉・パブロバ（メレンゲケーキ）。酪農・牧畜が盛んで乳製品・羊肉が名産',
+    life:'マオリ文化と英国系文化の二文化主義。世界で初めて女性参政権を認めた国（1893年）。雄大な自然が観光資源',
+    religion:'キリスト教が多数（約37%）だが無宗教も約48%と高い。マオリの伝統的な信仰も文化に組み込まれている',
+    lang:'英語・マオリ語・ニュージーランド手話の3言語が公用語。マオリ語の復興運動（コハンガ・レオ）が活発',
+    politics:'英国国王を元首とする立憲君主制。一院制議会（代議院）。首相が行政の長。マオリ議席が制度的に確保されている'},
+};
+
+// ── 労働・経済データベース ─────────────────────────────────────────────
+// hourly: 平均時給（円換算）  annual: 年間実労働時間
+// 1000円を稼ぐ時間 = 1000 / hourly（分換算は renderCards 内で計算）
+const WORK_DB = {
+  392:{ // 日本
+    annual:'約1,607時間（OECD）',
+    standard:'1日8時間・週40時間（労働基準法）',
+    wake:'7:00頃', sleep:'24:00頃',
+    hourly:2850,  // 平均年収約458万円 ÷ 1607h
+    note:'サービス残業が慢性化。有給取得率が低く「過労死」が社会問題。近年は働き方改革で改善中'
+  },
+  840:{ // アメリカ
+    annual:'約1,791時間（OECD）',
+    standard:'連邦法定なし・一般的に8h/日・40h/週',
+    wake:'6:30頃', sleep:'23:00頃',
+    hourly:5400,  // 平均年収約$65,000 ÷ 1791h × 150円/$
+    note:'有給休暇の法的保障なし（取れない文化）。医療保険が雇用に紐付く。格差が非常に大きい'
+  },
+  156:{ // 中国
+    annual:'約2,100時間以上',
+    standard:'1日8時間・週40時間（IT業界は「996」=9時〜21時・週6日が慣例）',
+    wake:'7:30頃', sleep:'23:30頃',
+    hourly:1050,  // 平均月収約9,000元 ÷ 170h × 20円/元
+    note:'996（9時出勤〜21時退社・週6日）が若手エンジニアの慣例。習近平政権が批判するも実態は継続'
+  },
+  410:{ // 韓国
+    annual:'約1,901時間（OECD）',
+    standard:'1日8時間・週40時間（2018年より週52時間上限に改正）',
+    wake:'7:00頃', sleep:'23:30頃',
+    hourly:2400,  // 平均年収約4,000万ウォン ÷ 1901h × 0.11円/ウォン
+    note:'パリパリ（빨리빨리）文化で長時間労働が慣習化。財閥企業への就職競争が非常に激しい'
+  },
+  356:{ // インド
+    annual:'約2,100時間以上',
+    standard:'1日9時間・週48時間（工場法）',
+    wake:'6:30頃', sleep:'23:00頃',
+    hourly:430,   // 平均年収約55万ルピー ÷ 2100h × 1.75円/ルピー
+    note:'IT産業（バンガロール）では欧米水準の給与も。農業・非正規労働者は非常に低賃金。格差が極めて大きい'
+  },
+  250:{ // フランス
+    annual:'約1,511時間（OECD・世界最短水準）',
+    standard:'1日7時間・週35時間（2000年施行の法定35時間制）',
+    wake:'7:30頃', sleep:'24:00頃',
+    hourly:4060,  // 平均年収約38,000EUR ÷ 1511h × 160円/EUR
+    note:'法定35時間・バカンス5週間が権利。昼食は2時間かける文化。ストライキで労働権を守る伝統'
+  },
+  276:{ // ドイツ
+    annual:'約1,341時間（OECD・世界最短クラス）',
+    standard:'1日8時間・週48時間が上限（実態は35〜40時間）',
+    wake:'7:00頃', sleep:'23:00頃',
+    hourly:5280,  // 平均年収約44,000EUR ÷ 1341h × 160円/EUR
+    note:'有給30日・育休取得率も高い。「仕事のためではなく生活のために働く」文化が定着'
+  },
+  826:{ // イギリス
+    annual:'約1,532時間（OECD）',
+    standard:'1日8時間・週48時間が上限（労働時間指令）',
+    wake:'7:00頃', sleep:'23:15頃',
+    hourly:4180,  // 平均年収約33,000GBP ÷ 1532h × 190円/GBP
+    note:'ブレグジット後も欧州水準の労働規制を維持。ゼロ時間契約（シフト保証なし）が問題視される'
+  },
+  682:{ // サウジアラビア
+    annual:'約1,920時間',
+    standard:'1日8時間・週48時間（ラマダン中は1日6時間）',
+    wake:'5:30頃（ファジュルの礼拝）', sleep:'25:00頃',
+    hourly:1400,  // 平均年収約70,000SAR ÷ 1920h × 40円/SAR
+    note:'労働力の約75%が外国人（カファラ制度）。石油収入で自国民は高待遇。ビジョン2030で経済多角化推進中'
+  },
+  764:{ // タイ
+    annual:'約2,200時間',
+    standard:'1日8時間・週48時間',
+    wake:'6:30頃', sleep:'22:30頃',
+    hourly:470,   // 最低賃金354バーツ/日 × 4.2円/バーツ ÷ 8h（平均はやや上）
+    note:'農業・観光・製造業が主要産業。外資系工場が多く工場労働者は低賃金。観光業はチップ収入に大きく依存'
+  },
+  702:{ // シンガポール
+    annual:'約2,258時間（アジア最長水準）',
+    standard:'1日8時間・週44時間',
+    wake:'7:30頃', sleep:'24:00頃（平均睡眠6.5時間と世界最短クラス）',
+    hourly:2900,  // 平均月収約5,000SGD × 110円/SGD ÷ 170h
+    note:'高生産性・高賃金だが生活費も世界最高水準。外国人労働者（EP・SP保有者）と低賃金労働者の格差が大きい'
+  },
+  76:{ // ブラジル
+    annual:'約1,800時間',
+    standard:'1日8時間・週44時間（法定）',
+    wake:'7:00頃', sleep:'23:30頃',
+    hourly:740,   // 平均月収約3,800BRL × 30円/BRL ÷ 170h
+    note:'地域格差が極めて大きい。非正規労働者が多い。ブラジル流「ジェイチーニョ」でルールよりも融通を利かせる'
+  },
+  36:{ // オーストラリア
+    annual:'約1,694時間（OECD）',
+    standard:'1日7.6時間・週38時間（法定）',
+    wake:'7:00頃', sleep:'22:45頃',
+    hourly:5300,  // 平均年収約90,000AUD ÷ 1694h × 100円/AUD
+    note:'最低賃金は世界最高水準（約2,200円/h）。有給20日が法的権利。「Fair Work Act」で労働者保護が充実'
+  },
+};
+
+const REGION_CLASS = {
+  '東アジア':'r-east-asia','東南アジア':'r-southeast-asia',
+  '南アジア':'r-south-asia','中央アジア':'r-centralasia',
+  '欧州':'r-europe','欧州・中央アジア':'r-europe',
+  '中東':'r-middle-east','中東・欧州':'r-middle-east',
+  'アフリカ':'r-africa','アフリカ・中東':'r-africa',
+  '北米':'r-americas','中米・カリブ':'r-americas','南米':'r-americas',
+  'オセアニア':'r-oceania',
 };
 
 const highlights = new Set(Object.keys(DB).map(Number));
 const svg = d3.select('#map');
 const g = svg.append('g');
 let scale=1, tx=0, ty=0, dragging=false, sx, sy, stx, sty, activeEl=null;
-
-const proj = d3.geoNaturalEarth1().scale(153).translate([480, 250]);
+const proj = d3.geoNaturalEarth1().scale(153).translate([480,250]);
 const pathGen = d3.geoPath().projection(proj);
+const tooltip = document.getElementById('tooltip');
+
+// カウント表示
+document.getElementById('country-count').textContent = `${highlights.size}カ国収録`;
 
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
-  .then(r => r.json())
-  .then(world => {
+  .then(r=>r.json()).then(world=>{
     const countries = topojson.feature(world, world.objects.countries);
     g.selectAll('.country')
       .data(countries.features).enter().append('path')
-      .attr('class', d => 'country' + (highlights.has(+d.id) ? ' highlight' : ''))
-      .attr('d', pathGen)
-      .on('click', (evt, d) => {
+      .attr('class', d=>{
         const info = DB[+d.id];
-        if (!info) return;
-        if (activeEl) d3.select(activeEl).classed('active', false);
+        let cls = 'country';
+        if(info){
+          cls += ' has-data';
+          const rc = REGION_CLASS[info.region];
+          if(rc) cls += ' '+rc;
+        }
+        return cls;
+      })
+      .attr('d', pathGen)
+      .on('mouseover', (evt,d)=>{
+        const info = DB[+d.id];
+        if(!info) return;
+        tooltip.textContent = info.flag+' '+info.name;
+        tooltip.style.opacity='1';
+      })
+      .on('mousemove', (evt)=>{
+        const rect = document.getElementById('map-container').getBoundingClientRect();
+        tooltip.style.left = (evt.clientX - rect.left)+'px';
+        tooltip.style.top  = (evt.clientY - rect.top)+'px';
+      })
+      .on('mouseout', ()=>{
+        tooltip.style.opacity='0';
+      })
+      .on('click', (evt,d)=>{
+        const info = DB[+d.id];
+        if(!info) return;
+        if(activeEl) d3.select(activeEl).classed('active',false);
         activeEl = evt.currentTarget;
-        d3.select(activeEl).classed('active', true).classed('highlight', false);
-        document.getElementById('hint').style.opacity = '0';
-        showPanel(info);
+        d3.select(activeEl).classed('active',true);
+        document.getElementById('hint').style.opacity='0';
+        tooltip.style.opacity='0';
+        showPanel(info, +d.id);
       });
   });
 
-function showPanel(info) {
-  document.getElementById('pflag').textContent = info.flag;
-  document.getElementById('pname').textContent = info.name;
-  document.getElementById('psub').textContent = info.region;
-  const pb = document.getElementById('pb');
-  pb.className = '';
-  pb.innerHTML = `
-    <div class="card"><div class="card-title">🍚 食文化</div><div class="card-body">${info.food}</div></div>
-    <div class="card"><div class="card-title">🏠 生活習慣</div><div class="card-body">${info.life}</div></div>
-    <div class="card"><div class="card-title">🕌 宗教・価値観</div><div class="card-body">${info.religion}</div></div>
-    <div class="card"><div class="card-title">🏛 政治の仕組み</div><div class="card-body">${info.politics}</div></div>`;
+let currentTab = 0;
+let currentInfo = null;
+let currentCountryId = null;
+
+function switchTab(n){
+  currentTab = n;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
+  if(currentInfo) renderCards(currentInfo, n);
 }
 
-// ドラッグ操作
-const mapEl = document.getElementById('map');
-mapEl.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('country')) return;
-  dragging = true; sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
-});
-window.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  tx = stx + (e.clientX - sx); ty = sty + (e.clientY - sy); applyT();
-});
-window.addEventListener('mouseup', () => dragging = false);
+function card(icon, title, body, badge){
+  const b = badge ? `<span class="badge ${badge==='univ'?'univ':'vary'}">${badge==='univ'?'普遍':'国別'}</span>` : '';
+  return `<div class="card"><div class="card-title">${icon} ${title}${b}</div><div class="card-body">${body}</div></div>`;
+}
 
-// ホイールズーム
-mapEl.addEventListener('wheel', e => {
+function renderCards(info, tab){
+  const pb = document.getElementById('pb');
+  pb.className = '';
+  if(tab === 0){
+    pb.innerHTML =
+      card('🍚','食文化', info.food) +
+      card('🏠','生活習慣', info.life) +
+      card('🕌','宗教・価値観', info.religion) +
+      card('🗣','言語', info.lang) +
+      card('🏛','政治の仕組み', info.politics);
+  } else if(tab === 1){
+    if(!info.comm){ pb.innerHTML='<div class="no-data">このセクションは準備中です</div>'; return; }
+    const c = info.comm;
+    pb.innerHTML =
+      card('🚫','「ノー」の伝え方', c.no, 'univ') +
+      card('🤫','沈黙の意味', c.silence, 'univ') +
+      card('👁','目線・アイコンタクト', c.eye, 'univ') +
+      card('😊','感情表現', c.emotion, 'univ') +
+      card('🤙','ジェスチャー', c.gesture, 'univ');
+  } else if(tab === 2){
+    if(!info.rules){ pb.innerHTML='<div class="no-data">このセクションは準備中です</div>'; return; }
+    const r = info.rules;
+    pb.innerHTML =
+      card('🚗','通行方向', r.traffic, 'univ') +
+      card('👗','服装規定', r.dress, 'univ') +
+      card('📷','撮影・SNS', r.photo, 'univ') +
+      card('🚫','持込禁止・規制', r.banned, 'vary') +
+      card('🏳️‍🌈','LGBT・法的地位', r.lgbt, 'vary');
+  } else if(tab === 3){
+    if(!info.values){ pb.innerHTML='<div class="no-data">このセクションは準備中です</div>'; return; }
+    const v = info.values;
+    pb.innerHTML =
+      card('⏰','時間の感覚', v.time, 'univ') +
+      card('👥','個人 vs 集団', v.collective, 'univ') +
+      card('💴','チップの慣習', v.tip, 'vary') +
+      card('🎁','贈り物の作法', v.gift, 'univ') +
+      card('🎨','色・数字の意味', v.color, 'univ');
+  } else if(tab === 4){
+    const w = WORK_DB[currentCountryId];
+    if(!w){ pb.innerHTML='<div class="no-data">このセクションは主要13カ国のみ対応しています</div>'; return; }
+    const minPerK = Math.round(1000 / w.hourly * 60); // 1000円を稼ぐのに必要な分数
+    const hStr = minPerK >= 60
+      ? `${Math.floor(minPerK/60)}時間${minPerK%60>0?minPerK%60+'分':''}`
+      : `${minPerK}分`;
+    const jpMin = Math.round(1000 / 2850 * 60); // 日本の基準（21分）
+    const diff = minPerK === jpMin ? '＝日本と同等'
+               : minPerK < jpMin ? `日本より${jpMin-minPerK}分 短い（高賃金）`
+               : `日本より${minPerK-jpMin}分 長い（低賃金）`;
+    pb.innerHTML =
+      card('⏱','年間実労働時間', w.annual) +
+      card('📋','法定労働時間', w.standard) +
+      card('🌅','起床・就寝の目安', `起床：${w.wake}<br>就寝：${w.sleep}`) +
+      card('💴','平均時給（円換算）', `<span style="font-size:1.4em;font-weight:600;color:#178DDC">${w.hourly.toLocaleString()}円/h</span>`) +
+      `<div class="card" style="background:rgba(239,159,39,0.12);border:1px solid rgba(239,159,39,0.35)">
+        <div class="card-title">🎯 1,000円を稼ぐのに必要な時間</div>
+        <div class="card-body">
+          <span style="font-size:1.6em;font-weight:700;color:#c07010">${hStr}</span>
+          <br><span style="font-size:0.9em;color:var(--tx2);margin-top:4px;display:block">${diff}</span>
+          <span style="font-size:0.85em;color:var(--tx3)">${w.note}</span>
+        </div>
+      </div>`;
+  }
+}
+
+function showPanel(info, id){
+  currentInfo = info;
+  currentCountryId = id;
+  document.getElementById('pflag').textContent = info.flag;
+  document.getElementById('pname').textContent = info.name;
+  document.getElementById('psub').textContent  = info.region;
+  document.getElementById('pinfo').textContent = '';
+  renderCards(info, currentTab);
+}
+
+// 検索
+function doSearch(q){
+  if(!q){ clearSearch(); return; }
+  const kw = q.toLowerCase();
+  const found = Object.entries(DB).find(([,v])=>v.name.includes(q) || v.name.toLowerCase().includes(kw));
+  if(found){
+    const [id,info] = found;
+    const el = document.querySelector(`path.country.has-data`);
+    // パス要素から対象を探す
+    g.selectAll('.country').each(function(d){
+      if(+d.id===+id){
+        if(activeEl) d3.select(activeEl).classed('active',false);
+        activeEl = this;
+        d3.select(this).classed('active',true);
+        showPanel(info, +id);
+        // 対象国にズームイン
+        const bounds = pathGen.bounds(d);
+        const cx = (bounds[0][0]+bounds[1][0])/2;
+        const cy = (bounds[0][1]+bounds[1][1])/2;
+        const mapEl = document.getElementById('map-container');
+        tx = mapEl.clientWidth/2 - cx*scale;
+        ty = mapEl.clientHeight/2 - cy*scale;
+        applyT();
+      }
+    });
+  }
+}
+function clearSearch(){
+  g.selectAll('.country.active').classed('active',false);
+  activeEl=null;
+}
+
+// ── 慣性スクロール ──────────────────────────────────────────────────────
+const mapEl = document.getElementById('map-container');
+let vx=0, vy=0, raf=null;
+const FRICTION = 0.90;   // 減速係数（0.85=快速 / 0.93=のんびり）
+const MIN_V    = 0.3;
+
+function animateInertia(){
+  vx *= FRICTION; vy *= FRICTION;
+  if(Math.abs(vx) < MIN_V && Math.abs(vy) < MIN_V){ raf=null; return; }
+  tx += vx; ty += vy;
+  applyT();
+  raf = requestAnimationFrame(animateInertia);
+}
+function stopInertia(){ if(raf){ cancelAnimationFrame(raf); raf=null; } vx=0; vy=0; }
+
+// ── マウス ───────────────────────────────────────────────────────────────
+let prevX=0, prevY=0, prevT=0;
+
+mapEl.addEventListener('mousedown', e=>{
+  if(e.target.classList.contains('country')) return;
+  stopInertia();
+  dragging=true;
+  sx=e.clientX; sy=e.clientY; stx=tx; sty=ty;
+  prevX=e.clientX; prevY=e.clientY; prevT=performance.now();
+  vx=0; vy=0;
+  mapEl.style.cursor='grabbing';
+});
+window.addEventListener('mousemove', e=>{
+  if(!dragging) return;
+  const now = performance.now();
+  const dt  = now - prevT;
+  if(dt > 0){
+    // 速度を指数移動平均でなめらかに
+    vx = vx*0.4 + (e.clientX - prevX)*0.6;
+    vy = vy*0.4 + (e.clientY - prevY)*0.6;
+  }
+  prevX=e.clientX; prevY=e.clientY; prevT=now;
+  tx = stx + (e.clientX - sx);
+  ty = sty + (e.clientY - sy);
+  applyT();
+});
+window.addEventListener('mouseup', ()=>{
+  if(!dragging) return;
+  dragging=false;
+  mapEl.style.cursor='grab';
+  // 十分な速度があれば慣性アニメ開始
+  if(Math.abs(vx) > MIN_V || Math.abs(vy) > MIN_V){
+    raf = requestAnimationFrame(animateInertia);
+  }
+});
+
+// ── タッチ操作（ピンチズーム + 慣性パン） ───────────────────────────────
+let lastTouchDist=0;
+let prevTX=0, prevTY=0, prevTT=0;
+
+mapEl.addEventListener('touchstart', e=>{
+  if(e.touches.length===1){
+    stopInertia();
+    dragging=true;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; stx=tx; sty=ty;
+    prevTX=sx; prevTY=sy; prevTT=performance.now();
+    vx=0; vy=0;
+  } else if(e.touches.length===2){
+    stopInertia(); dragging=false;
+    lastTouchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+},{passive:true});
+
+mapEl.addEventListener('touchmove', e=>{
   e.preventDefault();
-  doZoom(e.deltaY < 0 ? 1.15 : 0.87);
-}, { passive: false });
+  if(e.touches.length===1 && dragging){
+    const now=performance.now(), dt=now-prevTT;
+    if(dt>0){
+      vx = vx*0.4 + (e.touches[0].clientX - prevTX)*0.6;
+      vy = vy*0.4 + (e.touches[0].clientY - prevTY)*0.6;
+    }
+    prevTX=e.touches[0].clientX; prevTY=e.touches[0].clientY; prevTT=now;
+    tx = stx + (e.touches[0].clientX - sx);
+    ty = sty + (e.touches[0].clientY - sy);
+    applyT();
+  } else if(e.touches.length===2){
+    const d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    // ピンチの中心へズーム
+    const rect = mapEl.getBoundingClientRect();
+    const cx = ((e.touches[0].clientX + e.touches[1].clientX)/2) - rect.left;
+    const cy = ((e.touches[0].clientY + e.touches[1].clientY)/2) - rect.top;
+    zoomAt(cx, cy, d/lastTouchDist);
+    lastTouchDist = d;
+  }
+},{passive:false});
 
-function doZoom(f) { scale = Math.max(0.8, Math.min(14, scale * f)); applyT(); }
-function resetView() { scale = 1; tx = 0; ty = 0; applyT(); }
-function applyT() { g.attr('transform', `translate(${tx},${ty}) scale(${scale})`); }
+mapEl.addEventListener('touchend', ()=>{
+  if(!dragging) return;
+  dragging=false;
+  if(Math.abs(vx) > MIN_V || Math.abs(vy) > MIN_V){
+    raf = requestAnimationFrame(animateInertia);
+  }
+},{passive:true});
+
+// ── ホイールズーム（カーソル位置を中心に） ────────────────────────────────
+mapEl.addEventListener('wheel', e=>{
+  e.preventDefault();
+  stopInertia();
+  const rect   = mapEl.getBoundingClientRect();
+  const mx     = e.clientX - rect.left;
+  const my     = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.15 : 0.87;
+  zoomAt(mx, my, factor);
+},{passive:false});
+
+// ── 共通ズーム関数 ────────────────────────────────────────────────────────
+function zoomAt(cx, cy, factor){
+  const newScale = Math.max(0.8, Math.min(14, scale * factor));
+  const ratio = newScale / scale;
+  tx = cx - (cx - tx) * ratio;
+  ty = cy - (cy - ty) * ratio;
+  scale = newScale;
+  applyT();
+}
+function doZoom(f){
+  const rect = mapEl.getBoundingClientRect();
+  zoomAt(rect.width/2, rect.height/2, f);
+}
+function resetView(){
+  stopInertia();
+  scale=1; tx=0; ty=0; applyT();
+}
+function applyT(){ g.attr('transform',`translate(${tx},${ty}) scale(${scale})`); }
 </script>
 </body>
 </html>
