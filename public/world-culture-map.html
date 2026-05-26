@@ -168,6 +168,53 @@ svg#map:active { cursor:grabbing; }
 .econ-sign-pos { background:rgba(74,222,128,0.15); color:#4ade80; }
 .econ-sign-neg { background:rgba(248,113,113,0.13); color:#f87171; }
 
+/* ── 地域詳細モーダル（主要国 州・地域別） ── */
+#region-modal {
+  position:fixed; z-index:300; inset:0; background:rgba(0,0,0,0.55);
+  display:none; align-items:center; justify-content:center;
+  backdrop-filter:blur(2px);
+}
+#region-modal.open { display:flex; }
+#region-inner {
+  background:var(--bg); border-radius:12px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.45);
+  width:min(95vw,1000px); height:min(88vh,700px);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#region-hdr {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:12px 20px; border-bottom:0.5px solid var(--bd); flex-shrink:0; gap:10px;
+}
+#region-hdr-left { display:flex; flex-direction:column; gap:3px; }
+#region-title   { font-size:15px; font-weight:600; color:var(--tx); }
+#region-subtitle{ font-size:11px; color:var(--tx3); }
+.region-close {
+  border:none; background:transparent; color:var(--tx3);
+  font-size:19px; cursor:pointer; padding:0 2px; line-height:1; flex-shrink:0;
+}
+.region-close:hover { color:var(--tx); }
+#region-body { flex:1; display:flex; overflow:hidden; }
+#region-list-col { flex:1; overflow-y:auto; padding:8px 10px; position:relative; }
+#region-info-col {
+  width:230px; flex-shrink:0; padding:18px 16px; border-left:0.5px solid var(--bd);
+  display:flex; flex-direction:column; gap:10px; overflow-y:auto;
+}
+/* region list rows */
+.rg-row {
+  display:flex; align-items:center; gap:6px;
+  padding:5px 6px; border-radius:6px; cursor:pointer; transition:background 0.12s;
+}
+.rg-row:hover { background:var(--bg2); }
+.rg-row.rg-sel { background:var(--bg3); outline:1px solid var(--bd2); }
+.rg-rank { width:20px; font-size:11px; color:var(--tx3); text-align:right; flex-shrink:0; }
+.rg-name { flex:1; font-size:12px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rg-bar-wrap { width:70px; height:7px; background:var(--bg3); border-radius:3px; overflow:hidden; flex-shrink:0; }
+.rg-bar-fill { height:100%; border-radius:3px; transition:width 0.3s; }
+.rg-val { width:58px; text-align:right; font-size:11px; font-weight:600; flex-shrink:0; }
+/* us-map container */
+#us-svg-wrap { width:100%; height:100%; position:relative; }
+#us-svg-wrap svg { display:block; }
+
 @media(max-width:700px){
   /* 狭い画面では下部パネルに戻す */
   #app { flex-direction:column; }
@@ -272,6 +319,21 @@ svg#map:active { cursor:grabbing; }
 }
 .jpref-path:hover { stroke:#555; stroke-width:1; opacity:0.85; }
 .jpref-path.jpref-active { stroke:#c0784a !important; stroke-width:2; opacity:1; }
+
+/* ── リサイズハンドル ── */
+#resizer {
+  position:absolute; left:0; top:0; bottom:0; width:6px;
+  cursor:col-resize; z-index:20;
+  background:transparent; transition:background 0.15s;
+}
+#resizer::after {
+  content:''; position:absolute; left:2px; top:50%; transform:translateY(-50%);
+  width:2px; height:40px; border-radius:2px;
+  background:var(--bd2); transition:background 0.15s, height 0.15s;
+}
+#resizer:hover::after, #resizer.dragging::after {
+  background:#38bdf8; height:60px;
+}
 </style>
 </head>
 <body>
@@ -288,6 +350,7 @@ svg#map:active { cursor:grabbing; }
 
 <div id="app">
   <div id="map-container">
+    <div id="resizer" title="ドラッグで幅を調整"></div>
     <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="tooltip"></div>
     <div id="hint">🌍 データのある国（色付き）をクリック</div>
@@ -351,6 +414,28 @@ svg#map:active { cursor:grabbing; }
         <div id="pref-wage"></div>
         <div id="pref-sub"></div>
         <div id="pref-note">地域別最低賃金（厚生労働省）<br>※毎年10月頃に改定</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 地域詳細モーダル（主要国 州・地域別） ── -->
+<div id="region-modal" onclick="if(event.target===this)closeRegionModal()">
+  <div id="region-inner">
+    <div id="region-hdr">
+      <div id="region-hdr-left">
+        <span id="region-title"></span>
+        <span id="region-subtitle"></span>
+      </div>
+      <button class="region-close" onclick="closeRegionModal()" title="閉じる">✕</button>
+    </div>
+    <div id="region-body">
+      <div id="region-list-col"></div>
+      <div id="region-info-col">
+        <div id="region-sel-name" style="font-size:14px;color:var(--tx3)">← 地域をクリック</div>
+        <div id="region-sel-val"></div>
+        <div id="region-sel-sub" style="font-size:12px;color:var(--tx2);line-height:1.5"></div>
+        <div id="region-country-note" style="font-size:11px;color:var(--tx3);line-height:1.6;margin-top:auto;padding-top:10px;border-top:0.5px solid var(--bd)"></div>
       </div>
     </div>
   </div>
@@ -1091,6 +1176,43 @@ let MINWAGE_JP = {
   '鹿児島':953, '沖縄':952
 };
 
+// ── 地域別データベース（主要国 州・省・地域） ──────────────────────────────
+const REGION_DB = {
+  840:{btnLabel:'🏛 州別',title:'🇺🇸 州別最低賃金',subtitle:'連邦最低賃金 $7.25/h ／ 各州が独自設定可（2024-25年）',valueLabel:'最低賃金',valueUnit:'$/h',type:'us-map',
+    note:'南部・中西部の多くは連邦最低賃金($7.25)に据え置き。西海岸・北東部は$14〜$17台。多くの主要都市はさらに高い条例最低賃金を設定。',
+    regions:{'Alabama':{val:7.25,sub:'連邦最低賃金適用'},'Alaska':{val:11.91,sub:'毎年改定'},'Arizona':{val:14.70,sub:'フェニックス等市条例でさらに高い'},'Arkansas':{val:11.00,sub:''},'California':{val:16.50,sub:'LA・SF・SJ市は$16.5〜$17.50'},'Colorado':{val:14.81,sub:'デンバー市 $18.29'},'Connecticut':{val:16.35,sub:''},'Delaware':{val:15.00,sub:''},'Florida':{val:13.00,sub:'毎年改定・$15目標'},'Georgia':{val:7.25,sub:'連邦最低賃金適用'},'Hawaii':{val:14.00,sub:''},'Idaho':{val:7.25,sub:'連邦最低賃金適用'},'Illinois':{val:14.00,sub:'シカゴ市 $16.20'},'Indiana':{val:7.25,sub:'連邦最低賃金適用'},'Iowa':{val:7.25,sub:'連邦最低賃金適用'},'Kansas':{val:7.25,sub:'連邦最低賃金適用'},'Kentucky':{val:7.25,sub:'連邦最低賃金適用'},'Louisiana':{val:7.25,sub:'連邦最低賃金適用'},'Maine':{val:14.65,sub:''},'Maryland':{val:15.00,sub:'モンゴメリー郡 $17.15'},'Massachusetts':{val:15.00,sub:''},'Michigan':{val:10.56,sub:'段階引上げ予定'},'Minnesota':{val:10.85,sub:'ミネアポリス市 $15.57'},'Mississippi':{val:7.25,sub:'連邦最低賃金適用'},'Missouri':{val:13.75,sub:''},'Montana':{val:10.55,sub:''},'Nebraska':{val:13.50,sub:''},'Nevada':{val:12.00,sub:''},'New Hampshire':{val:7.25,sub:'連邦最低賃金適用'},'New Jersey':{val:15.49,sub:''},'New Mexico':{val:12.00,sub:'アルバカーキ市 $13.50'},'New York':{val:16.00,sub:'NYC・ロングアイランド $16.50'},'North Carolina':{val:7.25,sub:'連邦最低賃金適用'},'North Dakota':{val:7.25,sub:'連邦最低賃金適用'},'Ohio':{val:10.70,sub:''},'Oklahoma':{val:7.25,sub:'連邦最低賃金適用'},'Oregon':{val:15.25,sub:'ポートランド市 $16.25'},'Pennsylvania':{val:7.25,sub:'連邦最低賃金適用（フィラデルフィア市 $15.37）'},'Rhode Island':{val:15.00,sub:''},'South Carolina':{val:7.25,sub:'連邦最低賃金適用'},'South Dakota':{val:11.50,sub:''},'Tennessee':{val:7.25,sub:'連邦最低賃金適用'},'Texas':{val:7.25,sub:'連邦最低賃金適用'},'Utah':{val:7.25,sub:'連邦最低賃金適用'},'Vermont':{val:14.01,sub:''},'Virginia':{val:12.41,sub:''},'Washington':{val:16.66,sub:'シアトル市 $19.97・SeaTac市 $20.17'},'West Virginia':{val:8.75,sub:''},'Wisconsin':{val:7.25,sub:'連邦最低賃金適用'},'Wyoming':{val:7.25,sub:'連邦最低賃金適用'},'District of Columbia':{val:17.50,sub:'全米最高水準'}}},
+  276:{btnLabel:'🗺 州別',title:'🇩🇪 連邦州別 平均月収（税引前）',subtitle:'最低賃金は全国一律 12.41€/h（2024年）',valueLabel:'平均月収',valueUnit:'€',type:'list',
+    note:'旧東ドイツ州は依然として西側より20〜30%低い。バイエルン・バーデン南部が最高水準。',
+    regions:{'バイエルン':{val:4300,sub:'南部・BMW/シーメンス本社。南ドイツ経済の中心'},'バーデン＝ヴュルテンベルク':{val:4200,sub:'ベンツ・ボッシュ本社。製造業の精鋭地帯'},'ヘッセン':{val:4100,sub:'フランクフルト・欧州最大の金融センター'},'ハンブルク':{val:4050,sub:'ドイツ最大の港湾都市・メディア・貿易'},'ノルトライン＝ヴェストファーレン':{val:3750,sub:'最大人口州・ルール工業地帯・デュッセルドルフ'},'ブレーメン':{val:3600,sub:'小規模都市州・港湾'},'ベルリン':{val:3550,sub:'首都・スタートアップ・旧東西分断の境界'},'ラインラント＝プファルツ':{val:3450,sub:'ワイン産地・BASF化学'},'シュレースヴィヒ＝ホルシュタイン':{val:3400,sub:'デンマーク国境・農業・観光'},'ニーダーザクセン':{val:3400,sub:'フォルクスワーゲン本社（ヴォルフスブルク）'},'ザールラント':{val:3300,sub:'フランス国境・旧鉄鋼業・構造転換中'},'ブランデンブルク':{val:3100,sub:'旧東独・ベルリン周辺'},'ザクセン':{val:3100,sub:'旧東独・ライプツィヒ・ドレスデン・半導体投資中'},'テューリンゲン':{val:3000,sub:'旧東独・ゲーテ・シラーの地'},'ザクセン＝アンハルト':{val:2950,sub:'旧東独・化学・農業'},'メクレンブルク＝フォアポンメルン':{val:2900,sub:'旧東独・農業・バルト海観光・全国最低水準'}}},
+  826:{btnLabel:'🗺 地域別',title:'🇬🇧 地域別 平均週収（税引前）',subtitle:'国家最低賃金 £11.44/h（25歳以上・2024年）',valueLabel:'平均週収',valueUnit:'£',type:'list',
+    note:'ロンドンが突出して高く、北イングランド・ウェールズ・北アイルランドは低め。',
+    regions:{'ロンドン':{val:780,sub:'金融・テック・グローバル企業集積。生活コストも全国最高'},'サウスイースト':{val:625,sub:'ロンドン通勤圏・軍事・製薬'},'イーストオブイングランド':{val:600,sub:'ケンブリッジ・バイオテク・ライフサイエンス'},'スコットランド':{val:570,sub:'エジンバラ金融・グラスゴー工業。独自政策あり'},'ウェストミッドランズ':{val:545,sub:'バーミンガム・自動車（ジャガーランドローバー）'},'イーストミッドランズ':{val:538,sub:'ノッティンガム・レスター・製造業'},'ノースウェスト':{val:535,sub:'マンチェスター・リバプール・デジタル産業'},'サウスウェスト':{val:530,sub:'ブリストル・バース・航空宇宙・観光'},'ヨークシャー・ハンバー':{val:520,sub:'リーズ・シェフィールド・製造'},'ウェールズ':{val:505,sub:'カーディフ・自治政府。製造業・観光'},'ノースイースト':{val:498,sub:'ニューカッスル・全国最低水準'},'ノーザンアイルランド':{val:492,sub:'ベルファスト・農業・製造業。4ヵ国中最低'}}},
+  36:{btnLabel:'🗺 州別',title:'🇦🇺 州別 平均週収（税引前）',subtitle:'国家最低賃金 AUD 23.23/h（2024年）。全国一律',valueLabel:'平均週収',valueUnit:'A$',type:'list',
+    note:'最低賃金は全国同一。西オーストラリア（鉱業）・ACT（公務員・IT）が高い。タスマニアが最低水準。',
+    regions:{'ACT（首都特別地域）':{val:1650,sub:'キャンベラ・連邦公務員・IT・高所得'},'西オーストラリア州':{val:1600,sub:'パース・鉄鉱石・天然ガス。資源ブームで急騰'},'ニューサウスウェールズ州':{val:1490,sub:'シドニー・金融・IT・全国最大経済圏'},'ビクトリア州':{val:1440,sub:'メルボルン・金融・教育・文化'},'クイーンズランド州':{val:1410,sub:'ブリスベン・観光・農業・石炭'},'南オーストラリア州':{val:1320,sub:'アデレード・防衛産業・ワイン'},'北部準州':{val:1340,sub:'ダーウィン・資源・観光'},'タスマニア州':{val:1240,sub:'農業・観光・全国最低水準'}}},
+  250:{btnLabel:'🗺 地域別',title:'🇫🇷 地域別 平均月収（税引前）',subtitle:'SMIC（最低賃金）11.65€/h / 全国一律（2024年）',valueLabel:'平均月収',valueUnit:'€',type:'list',
+    note:'パリ首都圏が突出して高い。地方格差縮小が政策課題。',
+    regions:{'イル・ド・フランス（パリ首都圏）':{val:3420,sub:'金融・ファッション・テック。欧州最大都市圏'},'オーヴェルニュ＝ローヌ・アルプ':{val:2840,sub:'リヨン・グルノーブル。製薬・半導体'},'プロヴァンス＝アルプ＝コート・ダジュール':{val:2720,sub:'マルセイユ・ニース。観光・港湾'},'グラン・エスト':{val:2560,sub:'ストラスブール（欧州議会所在地）・製造業'},'ペイ・ド・ラ・ロワール':{val:2440,sub:'ナント・製造業・農業・IT'},'ノルマンディー':{val:2480,sub:'ルーアン・農業・自動車（ルノー工場）'},'ブルターニュ':{val:2450,sub:'農業・漁業・テック（レンヌ）'},'オクシタニー':{val:2400,sub:'トゥールーズ・航空宇宙（エアバス本社）'},'ヌーヴェル・アキテーヌ':{val:2360,sub:'ボルドー・ワイン・航空宇宙'},'オー・ド・フランス':{val:2380,sub:'リール・旧炭鉱地帯。失業率高め'},'コルス':{val:2180,sub:'島嶼経済・観光・農業。全国最低水準'}}},
+  156:{btnLabel:'🗺 省別',title:'🇨🇳 省・直轄市別 平均月収',subtitle:'最低賃金は地域別設定（上海 2,690元/月〜）',valueLabel:'平均月収',valueUnit:'元',type:'list',
+    note:'沿岸部（北京・上海・広東）と内陸部の格差が大きい。出稼ぎ労働者（農民工）は戸籍地とは別の低賃金で働くことが多い。',
+    regions:{'上海市':{val:12500,sub:'金融・貿易・外資企業集積。最低賃金2,690元/月'},'北京市':{val:12000,sub:'行政・テック（バイドゥ・JD等）・教育'},'浙江省':{val:9500,sub:'杭州（アリババ）・EC・民間企業強い'},'広東省':{val:9200,sub:'深圳（テック）・広州（自動車）・輸出製造業'},'江蘇省':{val:8800,sub:'南京・蘇州（日系多い）・製造業・IT'},'福建省':{val:7500,sub:'アモイ（厦門）・台湾資本多い・輸出'},'天津市':{val:7000,sub:'港湾・航空宇宙・重工業'},'山東省':{val:6500,sub:'青島（ビール・ハイアール）・農業・製造'},'湖北省':{val:6500,sub:'武漢・自動車・大学都市'},'重慶市':{val:6200,sub:'内陸最大都市・自動車（長安）'},'四川省':{val:6000,sub:'成都・テック・農業'},'湖南省':{val:5800,sub:'農業・資源'},'河南省':{val:5500,sub:'人口最多省・農業・内陸'},'安徽省':{val:5200,sub:'農業省・出稼ぎ送出し多い'},'甘粛省':{val:4500,sub:'西北部・農業・全国最低水準域'}}},
+  356:{btnLabel:'🗺 州別',title:'🇮🇳 主要州別 平均月収',subtitle:'最低賃金は州ごとに設定（182〜900₹/日）',valueLabel:'平均月収',valueUnit:'₹',type:'list',
+    note:'IT産業集積州（バンガロール等）vs 農業州の格差が顕著。州ごとに最低賃金が異なる。',
+    regions:{'デリー首都圏':{val:35000,sub:'行政・IT・金融。最低賃金₹17,494/月'},'ハリヤーナー州':{val:30000,sub:'グルガオン（IT・自動車）'},'カルナータカ州':{val:28000,sub:'バンガロール・インドのシリコンバレー'},'マハーラーシュトラ州':{val:27000,sub:'ムンバイ・金融・ボリウッド'},'テランガーナ州':{val:26000,sub:'ハイデラバード・IT・製薬'},'タミル・ナードゥ州':{val:24000,sub:'チェンナイ・自動車（日韓系）・IT'},'グジャラート州':{val:23000,sub:'製造業・財閥（タタ本拠）'},'ケーララ州':{val:22000,sub:'識字率・医療高水準・海外送金多い'},'アーンドラ・プラデーシュ州':{val:18000,sub:'農業・水産'},'ラージャスターン州':{val:17000,sub:'観光（ジャイプール）・鉱業'},'西ベンガル州':{val:17500,sub:'コルカタ・製造業'},'ウッタル・プラデーシュ州':{val:14000,sub:'人口最多州・農業'},'ビハール州':{val:11000,sub:'最貧困州の一つ。出稼ぎ・農業中心'}}},
+  410:{btnLabel:'🗺 広域別',title:'🇰🇷 広域市・道別 平均月収',subtitle:'最低賃金は全国一律 9,860ウォン/h（2024年）',valueLabel:'平均月収',valueUnit:'万ウォン',type:'list',
+    note:'ソウル首都圏への一極集中が顕著。蔚山は現代自動車・重工業の工場都市として製造業賃金が高い。',
+    regions:{'ソウル特別市':{val:358,sub:'IT・金融・大企業本社集積'},'蔚山広域市':{val:341,sub:'現代自動車・石油化学。製造業賃金が全国最高'},'京畿道':{val:320,sub:'ソウル近郊・半導体（サムスン・SKハイニックス）'},'仁川広域市':{val:305,sub:'港湾・空港・物流・製造業'},'世宗特別自治市':{val:298,sub:'行政新都市・公務員多い'},'大田広域市':{val:285,sub:'大徳研究団地・IT・政府機関'},'釜山広域市':{val:278,sub:'第二都市・港湾・水産・観光'},'大邱広域市':{val:268,sub:'繊維・自動車部品'},'光州広域市':{val:258,sub:'自動車・文化・民主化運動の地'},'済州特別自治道':{val:255,sub:'観光・農業。最低賃金適用者が多い'},'江原特別自治道':{val:248,sub:'農業・観光・軍事基地'},'全羅南道':{val:238,sub:'農業・水産・全国最低水準域'}}},
+  76:{btnLabel:'🗺 州別',title:'🇧🇷 主要州別 平均月収',subtitle:'連邦最低賃金 R$1,412/月（2024年）',valueLabel:'平均月収',valueUnit:'R$',type:'list',
+    note:'南北格差が大きい。連邦直轄区（ブラジリア）が最高。北東部・アマゾン地域では最低賃金近辺が多い。',
+    regions:{'連邦直轄区（ブラジリア）':{val:4600,sub:'行政都市・公務員・高所得'},'サンパウロ州':{val:3600,sub:'最大経済圏・製造業・金融・農業輸出'},'リオデジャネイロ州':{val:3300,sub:'観光・石油（ペトロブラス）・文化'},'サンタカタリーナ州':{val:3100,sub:'南部・工業・農業・ドイツ系移民多い'},'リオグランデドスル州':{val:2950,sub:'農業・自動車・南部'},'パラナ州':{val:2900,sub:'農業・製造業・日系人多い（クリチバ）'},'ミナスジェライス州':{val:2500,sub:'鉄鉱石・農業・自動車'},'アマゾナス州':{val:1900,sub:'フリーゾーン（マナウス）・熱帯雨林'},'バイア州':{val:1800,sub:'農業・観光・アフロ文化（サルバドール）'},'ペルナンブコ州':{val:1700,sub:'レシフェ・農業・製造業'},'セアラー州':{val:1600,sub:'農業・観光・貧困率高め'},'パラー州':{val:1650,sub:'アマゾン資源・農業・ベレン'}}},
+  764:{btnLabel:'🗺 地域別',title:'🇹🇭 地域別 平均月収',subtitle:'最低賃金は地域別（300〜370バーツ/日、2024年）',valueLabel:'平均月収',valueUnit:'฿',type:'list',
+    note:'バンコク都市圏が突出。東北部（イサーン）が最低水準で出稼ぎの送出し元。',
+    regions:{'バンコク首都圏':{val:22000,sub:'金融・観光・テック・日系企業集積'},'東部（チョンブリー・ラヨン）':{val:18000,sub:'自動車・電子・日韓系工業団地'},'プーケット':{val:16500,sub:'観光・リゾート。地域別最低賃金最高'},'中部（アユタヤ等）':{val:14000,sub:'農業・工業。日系工場多い'},'北部（チェンマイ）':{val:13000,sub:'観光・農業・デジタルノマド'},'南部（スラータニー等）':{val:12500,sub:'農業・ゴム・観光'},'東北部（イサーン）':{val:10500,sub:'農業・出稼ぎ送出し地域。全国最低水準'}}},
+  682:{btnLabel:'🗺 地域別',title:'🇸🇦 地域別 平均月収（サウジ人）',subtitle:'サウジ人最低賃金 4,000リヤル/月。外国人は職種契約による',valueLabel:'平均月収',valueUnit:'SAR',type:'list',
+    note:'東部州（石油・アラムコ）が最高水準。外国人労働者（全労働者の約75%）は職種・出身国で大幅に異なる。ビジョン2030で内国人雇用を推進。',
+    regions:{'東部州（ダンマーム・ジュバイル）':{val:13500,sub:'石油・アラムコ本社・石油化学。全国最高'},'リヤード州':{val:12000,sub:'首都・行政・金融・ビジョン2030推進'},'マッカ州（ジッダ・メッカ）':{val:10500,sub:'商業・ハッジ経済・港湾'},'マディーナ州':{val:9000,sub:'宗教観光・農業・巡礼経済'},'アシール州（アブハ）':{val:8000,sub:'農業・観光。高原で涼しい'},'タブーク州':{val:8200,sub:'農業・軍事・ネオム（未来都市）開発地'},'カスィーム州':{val:7800,sub:'農業・牧畜・ナツメヤシ生産'},'ジャウフ州':{val:7400,sub:'農業・辺境地帯。全国最低水準域'}}},
+};
+
 // ── 経済・地球データベース ─────────────────────────────────────────────────
 // caSign / fiscalSign: 1=黒字, -1=赤字, 0=中立
 const ECON_DB = {
@@ -1389,12 +1511,24 @@ function showPanel(info, id){
   document.getElementById('pname').textContent = info.name;
   document.getElementById('psub').textContent  = info.region;
   document.getElementById('pinfo').textContent = '';
-  // 都道府県ボタン：日本のときだけ表示
+  // 地域詳細ボタン：日本 or REGION_DB 対象国のみ表示
   const jBtn = document.getElementById('japan-map-btn');
-  if(jBtn) jBtn.style.display = id === 392 ? '' : 'none';
+  if(jBtn){
+    if(id === 392){
+      jBtn.style.display = ''; jBtn.textContent = '🗾 都道府県';
+      jBtn.onclick = openJapanMap;
+    } else if(REGION_DB[id]){
+      jBtn.style.display = ''; jBtn.textContent = REGION_DB[id].btnLabel;
+      jBtn.onclick = () => openRegionDetail(id);
+    } else {
+      jBtn.style.display = 'none';
+    }
+  }
   // 都道府県モーダルは自動では開かない。他の国クリックで閉じる。
   const js = document.getElementById('japan-section');
   if(js && id !== 392) js.classList.remove('open');
+  // 地域詳細モーダルも別の国に切り替えたら閉じる
+  closeRegionModal();
   renderCards(info, currentTab);
 }
 
@@ -1403,6 +1537,139 @@ function openJapanMap(){
   if(!js) return;
   js.classList.add('open');
   requestAnimationFrame(() => renderJapanMap());
+}
+
+// ══════════════════════════════════════════════════════
+// 地域詳細モーダル（主要国 州・省・地域）
+// ══════════════════════════════════════════════════════
+let _usTopo = null;
+
+function openRegionDetail(countryId){
+  const data = REGION_DB[countryId];
+  if(!data) return;
+  const modal = document.getElementById('region-modal');
+  modal.classList.add('open');
+  document.getElementById('region-title').textContent    = data.title;
+  document.getElementById('region-subtitle').textContent = data.subtitle;
+  document.getElementById('region-country-note').textContent = data.note || '';
+  document.getElementById('region-sel-name').textContent = '← 地域をクリック';
+  document.getElementById('region-sel-val').innerHTML    = '';
+  document.getElementById('region-sel-sub').textContent  = '';
+  if(data.type === 'us-map'){
+    renderUsaMap(data);
+  } else {
+    renderRegionList(data);
+  }
+}
+
+function closeRegionModal(){
+  document.getElementById('region-modal').classList.remove('open');
+}
+
+function _rgColor(t){
+  if(t >= 0.7) return '#4a9a22';
+  if(t >= 0.4) return '#EF9F27';
+  if(t >= 0.2) return '#E87A3A';
+  return '#E24B4A';
+}
+
+function renderRegionList(data){
+  const entries = Object.entries(data.regions).sort(([,a],[,b]) => b.val - a.val);
+  const vals = entries.map(([,r]) => r.val);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+
+  let html = '';
+  entries.forEach(([name, r], i) => {
+    const t   = (r.val - minV) / range;
+    const col = _rgColor(t);
+    const bw  = (t * 100).toFixed(1);
+    const safeN = name.replace(/'/g,"\\'");
+    const safeS = (r.sub||'').replace(/'/g,"\\'");
+    html += `<div class="rg-row" onclick="selectRgRow(this,'${safeN}',${r.val},'${safeS}','${data.valueLabel}','${data.valueUnit}')">
+      <span class="rg-rank">${i+1}</span>
+      <span class="rg-name" title="${name}">${name}</span>
+      <div class="rg-bar-wrap"><div class="rg-bar-fill" style="width:${bw}%;background:${col}"></div></div>
+      <span class="rg-val" style="color:${col}">${r.val.toLocaleString()}</span>
+    </div>`;
+  });
+  document.getElementById('region-list-col').innerHTML = html;
+}
+
+function selectRgRow(el, name, val, sub, label, unit){
+  document.querySelectorAll('.rg-row').forEach(r => r.classList.remove('rg-sel'));
+  el.classList.add('rg-sel');
+  document.getElementById('region-sel-name').textContent = name;
+  document.getElementById('region-sel-val').innerHTML =
+    `<span style="font-size:0.82em;color:var(--tx3)">${label}</span><br>` +
+    `<span style="font-size:1.5em;font-weight:700;color:#178DDC">${Number(val).toLocaleString()}<span style="font-size:0.65em;margin-left:3px">${unit}</span></span>`;
+  document.getElementById('region-sel-sub').textContent = sub || '';
+}
+
+function renderUsaMap(data){
+  const col = document.getElementById('region-list-col');
+  col.innerHTML = '<div id="us-svg-wrap"></div>';
+
+  const draw = (topo) => {
+    _usTopo = topo;
+    const wrap = document.getElementById('us-svg-wrap');
+    if(!wrap) return;
+    const W = wrap.clientWidth  || 600;
+    const H = wrap.clientHeight || 420;
+    const vals = Object.values(data.regions).map(r => r.val);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+
+    function getC(v){
+      if(v == null) return 'var(--bg3)';
+      return _rgColor((v - minV) / (maxV - minV || 1));
+    }
+
+    const svg = d3.select(wrap).append('svg').attr('width',W).attr('height',H);
+    const proj = d3.geoAlbersUsa().fitSize([W, H-36],
+      topojson.feature(topo, topo.objects.states));
+    const path = d3.geoPath().projection(proj);
+
+    const tip = document.createElement('div');
+    tip.style.cssText='position:absolute;background:var(--bg2);border:0.5px solid var(--bd);padding:3px 8px;border-radius:5px;font-size:12px;pointer-events:none;display:none;z-index:10;white-space:nowrap';
+    wrap.appendChild(tip);
+
+    svg.selectAll('path')
+      .data(topojson.feature(topo, topo.objects.states).features)
+      .join('path')
+      .attr('d', path)
+      .attr('fill', d => { const r=data.regions[d.properties.name]; return r?getC(r.val):'var(--bg3)'; })
+      .attr('stroke','var(--bg)').attr('stroke-width',0.7)
+      .style('cursor','pointer')
+      .on('mousemove',(event,d) => {
+        const r=data.regions[d.properties.name];
+        if(r){ tip.style.display='block';
+          tip.style.left=(event.offsetX+10)+'px'; tip.style.top=(event.offsetY-30)+'px';
+          tip.innerHTML=`<strong>${d.properties.name}</strong> $${r.val}/h`; }
+      })
+      .on('mouseleave',()=>{ tip.style.display='none'; })
+      .on('click',(event,d) => {
+        const r=data.regions[d.properties.name]; if(!r) return;
+        svg.selectAll('path').attr('stroke','var(--bg)').attr('stroke-width',0.7);
+        d3.select(event.currentTarget).attr('stroke','#fff').attr('stroke-width',2);
+        selectRgRow({classList:{add:()=>{},remove:()=>{}}},d.properties.name,r.val,r.sub||'',data.valueLabel,data.valueUnit);
+        document.querySelectorAll('.rg-row').forEach(x=>x.classList.remove('rg-sel'));
+      });
+
+    // 凡例
+    const steps = [{l:`$${maxV}（高）`,c:getC(maxV)},{l:`$${Math.round((minV+maxV)/2)}前後`,c:getC((minV+maxV)/2)},{l:`$${minV}（連邦最低）`,c:getC(minV)}];
+    const lg = svg.append('g').attr('transform',`translate(8,${H-32})`);
+    steps.forEach((s,i)=>{
+      lg.append('rect').attr('x',i*110).attr('y',0).attr('width',10).attr('height',10).attr('fill',s.c).attr('rx',2);
+      lg.append('text').attr('x',i*110+13).attr('y',9).attr('fill','var(--tx2)').attr('font-size',10).text(s.l);
+    });
+  };
+
+  if(_usTopo){ requestAnimationFrame(()=>draw(_usTopo)); }
+  else {
+    fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+      .then(r=>r.json()).then(topo=>requestAnimationFrame(()=>draw(topo)))
+      .catch(()=>{ renderRegionList(data); }); // マップ失敗時はリスト表示
+  }
 }
 
 // 検索
@@ -1457,6 +1724,7 @@ let prevX=0, prevY=0, prevT=0;
 
 mapEl.addEventListener('mousedown', e=>{
   if(e.target.classList.contains('country')) return;
+  if(e.target.id === 'resizer') return;
   stopInertia();
   dragging=true;
   sx=e.clientX; sy=e.clientY; stx=tx; sty=ty;
@@ -1695,6 +1963,64 @@ function _drawPrefMap(topo){
         : '';
     });
 }
+
+// ── パネルリサイズ ────────────────────────────────────────────────────────
+(function(){
+  const resizer = document.getElementById('resizer');
+  const panel   = document.getElementById('panel');
+  if(!resizer || !panel) return;
+
+  let active = false, startX = 0, startW = 0;
+  const MIN_W = 180, MAX_W = 620;
+
+  resizer.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    active  = true;
+    startX  = e.clientX;
+    startW  = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  window.addEventListener('mousemove', e => {
+    if(!active) return;
+    // パネルは地図の左にある → 右へドラッグ = パネル拡大
+    const delta  = e.clientX - startX;
+    const newW   = Math.max(MIN_W, Math.min(MAX_W, startW + delta));
+    panel.style.width = newW + 'px';
+  });
+
+  window.addEventListener('mouseup', () => {
+    if(!active) return;
+    active = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+  });
+
+  // タッチ対応
+  resizer.addEventListener('touchstart', e => {
+    e.preventDefault();
+    active  = true;
+    startX  = e.touches[0].clientX;
+    startW  = panel.offsetWidth;
+    resizer.classList.add('dragging');
+  }, {passive:false});
+
+  window.addEventListener('touchmove', e => {
+    if(!active) return;
+    const delta = e.touches[0].clientX - startX;
+    const newW  = Math.max(MIN_W, Math.min(MAX_W, startW + delta));
+    panel.style.width = newW + 'px';
+  }, {passive:true});
+
+  window.addEventListener('touchend', () => {
+    active = false;
+    resizer.classList.remove('dragging');
+  });
+})();
 </script>
 </body>
 </html>
