@@ -8,17 +8,12 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:   #ffffff; --bg2: #f4f3ee; --bg3: #ebebE6;
-  --tx:   #1a1a18; --tx2: #5f5e5a; --tx3: #888780;
-  --bd:   rgba(0,0,0,0.12); --bd2: rgba(0,0,0,0.20);
-  --font: system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;
+  --bg:   #0f172a; --bg2: #1e293b; --bg3: #273449;
+  --tx:   #f1f5f9; --tx2: #94a3b8; --tx3: #64748b;
+  --bd:   #334155; --bd2: #475569;
+  --font: 'Hiragino Sans','Noto Sans JP',system-ui,-apple-system,'Yu Gothic',sans-serif;
   --r: 8px;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#1c1c1a;--bg2:#2a2a27;--bg3:#323230;
-  --tx:#f0ede6;--tx2:#a8a69f;--tx3:#6e6c67;
-  --bd:rgba(255,255,255,0.10);--bd2:rgba(255,255,255,0.20);
-}}
 
 html,body { height:100%; font-family:var(--font); background:var(--bg); color:var(--tx); overflow:hidden; }
 
@@ -37,32 +32,32 @@ html,body { height:100%; font-family:var(--font); background:var(--bg); color:va
   background:var(--bg2); color:var(--tx); width:160px;
   outline:none;
 }
-#search:focus { border-color:#378ADD; }
+#search:focus { border-color:#38bdf8; }
 #search-icon { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--tx3); pointer-events:none; }
 #country-count { font-size:14px; color:var(--tx3); white-space:nowrap; }
 
 /* ── レイアウト ── */
-#app { display:flex; flex-direction:column; height:calc(100vh - 37px); }
+#app { display:flex; flex-direction:row; height:calc(100vh - 37px); }
 
 /* ── 地図 ── */
-#map-container { flex:1; position:relative; overflow:hidden; background:#bdd8ee; min-height:0; }
+#map-container { flex:1; position:relative; overflow:hidden; background:#0d1e35; min-width:0; }
 svg#map { width:100%; height:100%; cursor:grab; display:block; }
 svg#map:active { cursor:grabbing; }
 
-.country { fill:#e8dcc8; stroke:#b5a080; stroke-width:0.3; cursor:default; transition:fill 0.12s; }
+.country { fill:#2a3a4e; stroke:#3d5068; stroke-width:0.3; cursor:default; transition:fill 0.12s; }
 .country.has-data { cursor:pointer; }
-.country.r-east-asia  { fill:#e6dfc5; }
-.country.r-southeast-asia { fill:#e4dfcc; }
-.country.r-south-asia { fill:#e8dfc8; }
-.country.r-europe     { fill:#dde4d0; }
-.country.r-middle-east{ fill:#e8dbbf; }
-.country.r-africa     { fill:#e8d8c0; }
-.country.r-americas   { fill:#d8dfe8; }
-.country.r-oceania    { fill:#d4e4e0; }
-.country.r-centralasia{ fill:#e2dac8; }
+.country.r-east-asia  { fill:#243850; }
+.country.r-southeast-asia { fill:#1e3a4a; }
+.country.r-south-asia { fill:#263645; }
+.country.r-europe     { fill:#1e3830; }
+.country.r-middle-east{ fill:#3a2e18; }
+.country.r-africa     { fill:#3a2818; }
+.country.r-americas   { fill:#1e2e48; }
+.country.r-oceania    { fill:#183438; }
+.country.r-centralasia{ fill:#30281a; }
 
-.country.has-data:hover { filter:brightness(0.92); }
-.country.active { fill:#c0784a !important; filter:none; }
+.country.has-data:hover { filter:brightness(1.3); }
+.country.active { fill:#38bdf8 !important; filter:none; }
 
 /* ── ツールチップ ── */
 #tooltip {
@@ -93,20 +88,19 @@ svg#map:active { cursor:grabbing; }
 /* ── 凡例 ── */
 #legend {
   position:absolute; bottom:10px; right:8px;
-  background:rgba(var(--bg-rgb, 255,255,255),0.88); border:0.5px solid var(--bd);
+  background:rgba(15,23,42,0.90); border:0.5px solid var(--bd);
   border-radius:var(--r); padding:6px 10px; font-size:13px; color:var(--tx2);
   backdrop-filter:blur(4px);
 }
-@media(prefers-color-scheme:dark){#legend{background:rgba(28,28,26,0.88);}}
 .leg-row { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
 .leg-row:last-child { margin-bottom:0; }
 .leg-dot { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
 
-/* ── パネル ── */
+/* ── パネル（左サイドバー） ── */
 #panel {
-  border-top:0.5px solid var(--bd); background:var(--bg);
+  border-right:0.5px solid var(--bd); background:var(--bg);
   display:flex; flex-direction:column; flex-shrink:0;
-  height:240px; transition:height 0.2s;
+  width:380px; height:100%; order:-1;
 }
 #ph {
   padding:9px 14px 7px; border-bottom:0.5px solid var(--bd);
@@ -115,11 +109,18 @@ svg#map:active { cursor:grabbing; }
 #pflag { font-size:28px; line-height:1; }
 #pname { font-size:19px; font-weight:500; }
 #psub  { font-size:14px; color:var(--tx2); }
-#pinfo { font-size:14px; color:var(--tx3); margin-left:auto; }
+#pinfo { font-size:14px; color:var(--tx3); }
+#japan-map-btn {
+  display:none; margin-left:auto; flex-shrink:0;
+  border:1px solid rgba(56,189,248,0.35); background:rgba(56,189,248,0.10);
+  color:#38bdf8; border-radius:6px; padding:3px 9px 3px 7px;
+  font-size:12px; cursor:pointer; white-space:nowrap; line-height:1.5;
+}
+#japan-map-btn:hover { background:rgba(56,189,248,0.22); }
 
 #pb {
   flex:1; overflow-y:auto; padding:10px 14px;
-  display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
+  display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
 }
 #pb.empty {
   display:flex; align-items:center; justify-content:center;
@@ -130,10 +131,49 @@ svg#map:active { cursor:grabbing; }
 .card-title { font-size:13px; color:var(--tx2); font-weight:500; letter-spacing:0.04em; margin-bottom:4px; }
 .card-body  { font-size:14px; color:var(--tx); line-height:1.55; }
 
+/* ── 経済ビュー切替スイッチャー ── */
+.econ-switcher {
+  display:flex; background:var(--bg3); border-radius:8px; padding:3px; gap:2px;
+  grid-column:1/-1; margin-bottom:4px;
+}
+.econ-sw-btn {
+  flex:1; border:none; background:transparent; color:var(--tx2);
+  font-size:11px; padding:6px 4px; border-radius:6px; cursor:pointer;
+  transition:background 0.15s,color 0.15s; white-space:nowrap;
+}
+.econ-sw-btn.active {
+  background:var(--bg); color:var(--tx); font-weight:600;
+  box-shadow:0 1px 4px rgba(0,0,0,0.14);
+}
+.econ-sw-btn:hover:not(.active){ background:var(--bg2); }
+/* 経済ビュー共通カード（全幅・スクロール可） */
+.econ-full-card {
+  grid-column:1/-1; background:var(--bg2); border-radius:var(--r);
+  padding:14px 16px; display:flex; flex-direction:column; gap:12px;
+}
+.econ-section-label {
+  font-size:0.8em; color:var(--tx3); margin-bottom:2px; display:block;
+}
+.econ-value { font-size:1.15em; font-weight:600; }
+.econ-bar-bg {
+  background:var(--bg3); border-radius:4px; height:7px;
+  margin-top:5px; overflow:hidden;
+}
+.econ-bar-fill { height:100%; border-radius:4px; transition:width 0.4s ease; }
+.econ-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; }
+.econ-sign-chip {
+  display:inline-block; font-size:0.78em; font-weight:700;
+  padding:1px 6px; border-radius:4px; margin-left:5px; vertical-align:middle;
+}
+.econ-sign-pos { background:rgba(74,222,128,0.15); color:#4ade80; }
+.econ-sign-neg { background:rgba(248,113,113,0.13); color:#f87171; }
+
 @media(max-width:700px){
+  /* 狭い画面では下部パネルに戻す */
+  #app { flex-direction:column; }
+  #panel { order:0; width:100%; height:280px; border-right:none; border-top:0.5px solid var(--bd); }
   #pb { grid-template-columns:1fr 1fr; }
-  #panel { height:300px; }
-  #search { width:120px; }
+  #search { width:110px; }
   #legend { display:none; }
 }
 @media(max-width:440px){
@@ -149,13 +189,13 @@ svg#map:active { cursor:grabbing; }
 }
 #tabs::-webkit-scrollbar { display:none; }
 .tab {
-  font-size:12px; padding:6px 13px; border:none; background:transparent;
+  font-size:11px; padding:6px 9px; border:none; background:transparent;
   color:var(--tx2); cursor:pointer; white-space:nowrap;
   border-bottom:2px solid transparent; transition:color 0.15s;
   flex-shrink:0;
 }
 .tab:hover { color:var(--tx); background:var(--bg2); }
-.tab.active { color:var(--tx); border-bottom-color:#378ADD; font-weight:500; }
+.tab.active { color:var(--tx); border-bottom-color:#38bdf8; font-weight:500; }
 
 .no-data {
   display:flex; align-items:center; justify-content:center;
@@ -167,16 +207,71 @@ svg#map:active { cursor:grabbing; }
   display:inline-block; font-size:9px; padding:1px 5px;
   border-radius:8px; margin-left:4px; vertical-align:middle; font-weight:400;
 }
-.badge.univ { background:rgba(55,138,221,0.15); color:#378ADD; }
-.badge.vary { background:rgba(239,159,39,0.18); color:#b07010; }
-@media(prefers-color-scheme:dark){
-  .badge.vary { color:#EF9F27; }
-}
+.badge.univ { background:rgba(56,189,248,0.15); color:#38bdf8; }
+.badge.vary { background:rgba(251,191,36,0.18); color:#fbbf24; }
 
 /* スクロールバー細め */
 #pb::-webkit-scrollbar { width:4px; }
 #pb::-webkit-scrollbar-track { background:transparent; }
 #pb::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:4px; }
+
+/* ── 都道府県最低賃金マップ（モーダル） ── */
+#japan-section {
+  position:fixed; z-index:300; inset:0;
+  background:rgba(0,0,0,0.55);
+  display:none; align-items:center; justify-content:center;
+  backdrop-filter:blur(2px);
+}
+#japan-section.open { display:flex; }
+#japan-inner {
+  background:var(--bg); border-radius:12px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.45);
+  width:min(94vw,1040px); height:min(88vh,740px);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#japan-section-hdr {
+  font-size:13px; color:var(--tx2); padding:10px 16px;
+  border-bottom:0.5px solid var(--bd); flex-shrink:0;
+  background:var(--bg2); display:flex; align-items:center; gap:8px;
+}
+.japan-close {
+  margin-left:auto; background:none; border:none;
+  color:var(--tx2); font-size:20px; cursor:pointer; padding:0 4px; line-height:1;
+}
+.japan-close:hover { color:var(--tx); }
+#japan-body { flex:1; display:flex; flex-direction:row; overflow:hidden; }
+#japan-map-col {
+  flex:1; position:relative; padding:8px 8px 4px;
+}
+#japan-svg { width:100%; height:100%; }
+#pref-tip {
+  position:absolute; pointer-events:none;
+  background:rgba(0,0,0,0.75); color:#fff;
+  font-size:12px; padding:2px 10px; border-radius:8px;
+  white-space:nowrap; opacity:0; transition:opacity 0.1s;
+  top:0; left:0;
+}
+#japan-info-col {
+  width:260px; flex-shrink:0; padding:20px 22px;
+  border-left:0.5px solid var(--bd);
+  display:flex; flex-direction:column; justify-content:center;
+}
+#pref-name { font-size:17px; font-weight:600; color:var(--tx); margin-bottom:6px; }
+#pref-wage { line-height:1.1; margin-bottom:6px; }
+#pref-sub  { font-size:13px; color:var(--tx2); }
+#pref-note { font-size:11px; color:var(--tx3); margin-top:12px; line-height:1.6; }
+#japan-legend {
+  position:absolute; bottom:10px; left:12px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.jleg { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--tx2); }
+.jleg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.jpref-path {
+  stroke:var(--bg); stroke-width:0.4; cursor:pointer;
+  transition:opacity 0.1s, stroke-width 0.1s;
+}
+.jpref-path:hover { stroke:#555; stroke-width:1; opacity:0.85; }
+.jpref-path.jpref-active { stroke:#c0784a !important; stroke-width:2; opacity:1; }
 </style>
 </head>
 <body>
@@ -202,12 +297,12 @@ svg#map:active { cursor:grabbing; }
       <button class="zbtn" onclick="resetView()" title="リセット" style="font-size:11px">↺</button>
     </div>
     <div id="legend">
-      <div class="leg-row"><div class="leg-dot" style="background:#c5cfe0"></div>南北アメリカ</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#c8d8c0"></div>ヨーロッパ</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#d8c8a8"></div>中東・北アフリカ</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#d8c0a8"></div>サブサハラ・アフリカ</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#d8d0b8"></div>東・中央アジア</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#d0dcd8"></div>東南アジア・オセアニア</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#1e2e48"></div>南北アメリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#1e3830"></div>ヨーロッパ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#3a2e18"></div>中東・北アフリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#3a2818"></div>サブサハラ・アフリカ</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#30281a"></div>東・中央アジア</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#183438"></div>東南アジア・オセアニア</div>
     </div>
   </div>
 
@@ -217,15 +312,47 @@ svg#map:active { cursor:grabbing; }
       <span id="pname">国をクリックしてください</span>
       <span id="psub"></span>
       <span id="pinfo"></span>
+      <button id="japan-map-btn" onclick="openJapanMap()" title="都道府県別最低賃金マップを開く">🗾 都道府県</button>
     </div>
     <div id="tabs">
       <button class="tab active" onclick="switchTab(0)">📋 基本情報</button>
-      <button class="tab" onclick="switchTab(1)">💬 コミュニケーション</button>
-      <button class="tab" onclick="switchTab(2)">⚖️ ルール・禁忌</button>
-      <button class="tab" onclick="switchTab(3)">💡 価値観・マナー</button>
+      <button class="tab" onclick="switchTab(1)">💬 コミュニ</button>
+      <button class="tab" onclick="switchTab(2)">⚖️ ルール</button>
+      <button class="tab" onclick="switchTab(3)">💡 価値観</button>
       <button class="tab" onclick="switchTab(4)">💴 労働・経済</button>
     </div>
     <div id="pb" class="empty">地図上の色付きの国を選ぶと情報が表示されます</div>
+  </div>
+
+</div>
+
+<!-- ── 都道府県別最低賃金マップ モーダル（#app外） ── -->
+<div id="japan-section" onclick="if(event.target===this)this.classList.remove('open')">
+  <div id="japan-inner">
+    <div id="japan-section-hdr">
+      🗾 都道府県別最低賃金マップ
+      <span id="minwage-updated" style="font-size:11px;color:var(--tx3)"></span>
+      <button class="japan-close" onclick="document.getElementById('japan-section').classList.remove('open')" title="閉じる">✕</button>
+    </div>
+    <div id="japan-body">
+      <div id="japan-map-col">
+        <svg id="japan-svg"></svg>
+        <div id="pref-tip"></div>
+        <div id="japan-legend">
+          <div class="jleg"><div class="jleg-dot" style="background:#fef0d9"></div>〜959円</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#fdcc8a"></div>960〜999</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#fc8d59"></div>1,000〜1,049</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#e34a33"></div>1,050〜1,099</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#b30000"></div>1,100円〜</div>
+        </div>
+      </div>
+      <div id="japan-info-col">
+        <div id="pref-name">🗾 都道府県をクリック</div>
+        <div id="pref-wage"></div>
+        <div id="pref-sub"></div>
+        <div id="pref-note">地域別最低賃金（厚生労働省）<br>※毎年10月頃に改定</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -848,6 +975,7 @@ const WORK_DB = {
     standard:'1日8時間・週40時間（労働基準法）',
     wake:'7:00頃', sleep:'24:00頃',
     hourly:2850,  // 平均年収約458万円 ÷ 1607h
+    parttime:1150, parttimeNote:'全国アルバイト・パート平均（求人統計2024年）',
     note:'サービス残業が慢性化。有給取得率が低く「過労死」が社会問題。近年は働き方改革で改善中'
   },
   840:{ // アメリカ
@@ -855,6 +983,7 @@ const WORK_DB = {
     standard:'連邦法定なし・一般的に8h/日・40h/週',
     wake:'6:30頃', sleep:'23:00頃',
     hourly:5400,  // 平均年収約$65,000 ÷ 1791h × 150円/$
+    parttime:2250, parttimeNote:'Part-time avg ~$15/h（連邦最低賃金$7.25、州ごとに差大）',
     note:'有給休暇の法的保障なし（取れない文化）。医療保険が雇用に紐付く。格差が非常に大きい'
   },
   156:{ // 中国
@@ -862,6 +991,7 @@ const WORK_DB = {
     standard:'1日8時間・週40時間（IT業界は「996」=9時〜21時・週6日が慣例）',
     wake:'7:30頃', sleep:'23:30頃',
     hourly:1050,  // 平均月収約9,000元 ÷ 170h × 20円/元
+    parttime:900, parttimeNote:'非正規・兼業 約45元/h（都市部）。農村部はさらに低い',
     note:'996（9時出勤〜21時退社・週6日）が若手エンジニアの慣例。習近平政権が批判するも実態は継続'
   },
   410:{ // 韓国
@@ -869,6 +999,7 @@ const WORK_DB = {
     standard:'1日8時間・週40時間（2018年より週52時間上限に改正）',
     wake:'7:00頃', sleep:'23:30頃',
     hourly:2400,  // 平均年収約4,000万ウォン ÷ 1901h × 0.11円/ウォン
+    parttime:1085, parttimeNote:'最低賃金9,860ウォン/h（2024）≒1,085円。アルバイトは最低賃金近辺が大半',
     note:'パリパリ（빨리빨리）文化で長時間労働が慣習化。財閥企業への就職競争が非常に激しい'
   },
   356:{ // インド
@@ -876,6 +1007,7 @@ const WORK_DB = {
     standard:'1日9時間・週48時間（工場法）',
     wake:'6:30頃', sleep:'23:00頃',
     hourly:430,   // 平均年収約55万ルピー ÷ 2100h × 1.75円/ルピー
+    parttime:190, parttimeNote:'非正規・日雇い 約110ルピー/h（都市部）。農村・農業従事者はさらに低い',
     note:'IT産業（バンガロール）では欧米水準の給与も。農業・非正規労働者は非常に低賃金。格差が極めて大きい'
   },
   250:{ // フランス
@@ -883,6 +1015,7 @@ const WORK_DB = {
     standard:'1日7時間・週35時間（2000年施行の法定35時間制）',
     wake:'7:30頃', sleep:'24:00頃',
     hourly:4060,  // 平均年収約38,000EUR ÷ 1511h × 160円/EUR
+    parttime:1864, parttimeNote:'SMIC（最低賃金）11.65EUR/h（2024）≒1,864円。パートもSMIC適用で保護される',
     note:'法定35時間・バカンス5週間が権利。昼食は2時間かける文化。ストライキで労働権を守る伝統'
   },
   276:{ // ドイツ
@@ -890,6 +1023,7 @@ const WORK_DB = {
     standard:'1日8時間・週48時間が上限（実態は35〜40時間）',
     wake:'7:00頃', sleep:'23:00頃',
     hourly:5280,  // 平均年収約44,000EUR ÷ 1341h × 160円/EUR
+    parttime:1985, parttimeNote:'法定最低賃金12.41EUR/h（2024）≒1,985円。Minijobでも最低賃金が適用される',
     note:'有給30日・育休取得率も高い。「仕事のためではなく生活のために働く」文化が定着'
   },
   826:{ // イギリス
@@ -897,6 +1031,7 @@ const WORK_DB = {
     standard:'1日8時間・週48時間が上限（労働時間指令）',
     wake:'7:00頃', sleep:'23:15頃',
     hourly:4180,  // 平均年収約33,000GBP ÷ 1532h × 190円/GBP
+    parttime:2173, parttimeNote:'National Living Wage £11.44/h（2024・21歳以上）≒2,173円',
     note:'ブレグジット後も欧州水準の労働規制を維持。ゼロ時間契約（シフト保証なし）が問題視される'
   },
   682:{ // サウジアラビア
@@ -904,6 +1039,7 @@ const WORK_DB = {
     standard:'1日8時間・週48時間（ラマダン中は1日6時間）',
     wake:'5:30頃（ファジュルの礼拝）', sleep:'25:00頃',
     hourly:1400,  // 平均年収約70,000SAR ÷ 1920h × 40円/SAR
+    parttime:960, parttimeNote:'外国人労働者（カファラ制度下）が大半。自国民の非正規は少ない。約24SAR/h',
     note:'労働力の約75%が外国人（カファラ制度）。石油収入で自国民は高待遇。ビジョン2030で経済多角化推進中'
   },
   764:{ // タイ
@@ -911,6 +1047,7 @@ const WORK_DB = {
     standard:'1日8時間・週48時間',
     wake:'6:30頃', sleep:'22:30頃',
     hourly:470,   // 最低賃金354バーツ/日 × 4.2円/バーツ ÷ 8h（平均はやや上）
+    parttime:186, parttimeNote:'最低賃金354バーツ/日（2024）÷8h ≒44バーツ/h≒185円。農村部はさらに低い',
     note:'農業・観光・製造業が主要産業。外資系工場が多く工場労働者は低賃金。観光業はチップ収入に大きく依存'
   },
   702:{ // シンガポール
@@ -918,6 +1055,7 @@ const WORK_DB = {
     standard:'1日8時間・週44時間',
     wake:'7:30頃', sleep:'24:00頃（平均睡眠6.5時間と世界最短クラス）',
     hourly:2900,  // 平均月収約5,000SGD × 110円/SGD ÷ 170h
+    parttime:990, parttimeNote:'Progressive Wage Model対象職種でSGD9/h（約990円）。最低賃金制度なし',
     note:'高生産性・高賃金だが生活費も世界最高水準。外国人労働者（EP・SP保有者）と低賃金労働者の格差が大きい'
   },
   76:{ // ブラジル
@@ -925,6 +1063,7 @@ const WORK_DB = {
     standard:'1日8時間・週44時間（法定）',
     wake:'7:00頃', sleep:'23:30頃',
     hourly:740,   // 平均月収約3,800BRL × 30円/BRL ÷ 170h
+    parttime:210, parttimeNote:'最低賃金1,412BRL/月（2024）÷220h ≒6.4BRL/h≒192円。非正規が非常に多い',
     note:'地域格差が極めて大きい。非正規労働者が多い。ブラジル流「ジェイチーニョ」でルールよりも融通を利かせる'
   },
   36:{ // オーストラリア
@@ -932,8 +1071,42 @@ const WORK_DB = {
     standard:'1日7.6時間・週38時間（法定）',
     wake:'7:00頃', sleep:'22:45頃',
     hourly:5300,  // 平均年収約90,000AUD ÷ 1694h × 100円/AUD
+    parttime:2300, parttimeNote:'法定最低賃金AUD23.23/h（2024）≒2,300円。世界最高水準。パートにも同額適用',
     note:'最低賃金は世界最高水準（約2,200円/h）。有給20日が法的権利。「Fair Work Act」で労働者保護が充実'
   },
+};
+
+// ── 地域別最低賃金（令和6年度フォールバック値） ─────────────────────────
+// checker.py が /data/minwage_jp.json を生成した場合はそちらを優先して上書きする
+let MINWAGE_JP = {
+  '北海道':960, '青森':953, '岩手':952, '宮城':973, '秋田':951,
+  '山形':955,   '福島':955, '茨城':1005,'栃木':1004, '群馬':985,
+  '埼玉':1078,  '千葉':1076,'東京':1163,'神奈川':1162,'新潟':985,
+  '富山':1007,  '石川':984, '福井':984, '山梨':988,  '長野':998,
+  '岐阜':1001,  '静岡':1034,'愛知':1077,'三重':1023, '滋賀':1017,
+  '京都':1058,  '大阪':1114,'兵庫':1052,'奈良':986,  '和歌山':980,
+  '鳥取':957,   '島根':962, '岡山':982, '広島':1020, '山口':979,
+  '徳島':980,   '香川':970, '愛媛':956, '高知':952,  '福岡':992,
+  '佐賀':956,   '長崎':953, '熊本':952, '大分':954,  '宮崎':952,
+  '鹿児島':953, '沖縄':952
+};
+
+// ── 経済・地球データベース ─────────────────────────────────────────────────
+// caSign / fiscalSign: 1=黒字, -1=赤字, 0=中立
+const ECON_DB = {
+  392:{ gdp:'4.2兆ドル', gdpRank:4, currentAccount:'黒字 +約1,500億ドル', caSign:1, fiscal:'赤字 GDP比 −3〜4%', fiscalSign:-1, debt:'265%（先進国最高水準）', worldSharePct:4.2, worldRank:4, co2Pct:3.4, oda:'ODA供与国（DAC加盟・世界5位前後）' },
+  840:{ gdp:'27.4兆ドル', gdpRank:1, currentAccount:'赤字 −約8,000億ドル', caSign:-1, fiscal:'赤字 GDP比 −7〜8%', fiscalSign:-1, debt:'123%', worldSharePct:26, worldRank:1, co2Pct:14, oda:'DAC最大拠出国（絶対額）' },
+  156:{ gdp:'17.8兆ドル', gdpRank:2, currentAccount:'黒字 +約2,500億ドル', caSign:1, fiscal:'赤字 GDP比 −3%前後', fiscalSign:-1, debt:'84%', worldSharePct:17, worldRank:2, co2Pct:31, oda:'最大の二国間援助供与国に転換。一帯一路で途上国へ大規模融資' },
+  410:{ gdp:'1.7兆ドル', gdpRank:13, currentAccount:'黒字（半導体・自動車輸出）', caSign:1, fiscal:'赤字 GDP比 −2〜3%', fiscalSign:-1, debt:'54%', worldSharePct:1.6, worldRank:13, co2Pct:1.8, oda:'DAC加盟・援助供与国（OECD加盟後急増）' },
+  356:{ gdp:'3.7兆ドル', gdpRank:5, currentAccount:'赤字（輸入超過）', caSign:-1, fiscal:'赤字 GDP比 −5%前後', fiscalSign:-1, debt:'83%', worldSharePct:3.5, worldRank:5, co2Pct:7, oda:'かつて最大の援助受取国。現在は南南協力の供与国にも' },
+  250:{ gdp:'3.0兆ドル', gdpRank:7, currentAccount:'赤字 −約200億ドル', caSign:-1, fiscal:'赤字 GDP比 −5〜6%', fiscalSign:-1, debt:'111%', worldSharePct:2.9, worldRank:7, co2Pct:1.0, oda:'DAC加盟（旧植民地アフリカ向けが中心）' },
+  276:{ gdp:'4.5兆ドル', gdpRank:3, currentAccount:'黒字（輸出大国）', caSign:1, fiscal:'赤字（構造的赤字に転換）', fiscalSign:-1, debt:'66%', worldSharePct:4.3, worldRank:3, co2Pct:2.1, oda:'DAC加盟・欧州最大規模の援助供与国' },
+  826:{ gdp:'3.1兆ドル', gdpRank:6, currentAccount:'赤字 −約1,000億ドル', caSign:-1, fiscal:'赤字 GDP比 −4〜5%', fiscalSign:-1, debt:'101%', worldSharePct:3.0, worldRank:6, co2Pct:1.0, oda:'DAC加盟（GDP比0.5%目標維持）' },
+  682:{ gdp:'1.1兆ドル', gdpRank:18, currentAccount:'黒字（原油輸出）', caSign:1, fiscal:'原油価格次第（$60/bbl以下で赤字）', fiscalSign:0, debt:'26%（低水準）', worldSharePct:1.0, worldRank:18, co2Pct:2.3, oda:'OPECファンド・サウジ開発基金。アラブ・イスラム圏に重点' },
+  764:{ gdp:'0.57兆ドル', gdpRank:25, currentAccount:'黒字（観光収入・輸出）', caSign:1, fiscal:'赤字 GDP比 −3〜4%', fiscalSign:-1, debt:'62%', worldSharePct:0.5, worldRank:25, co2Pct:1.0, oda:'援助受取国から卒業。ASEAN内の供与国へ移行中' },
+  702:{ gdp:'0.50兆ドル', gdpRank:30, currentAccount:'大幅黒字 GDP比 +20%超', caSign:1, fiscal:'黒字（積立金を蓄積）', fiscalSign:1, debt:'168%（CPF年金制度による。実質債務は低い）', worldSharePct:0.5, worldRank:30, co2Pct:0.1, oda:'援助受取国→金融ハブへ転換。国際機関への拠出で貢献' },
+  76:{ gdp:'2.1兆ドル', gdpRank:9, currentAccount:'赤字（利払い超過）', caSign:-1, fiscal:'赤字 GDP比 −7〜9%', fiscalSign:-1, debt:'89%', worldSharePct:2.0, worldRank:9, co2Pct:2.4, oda:'援助受取国。南南協力でアフリカ・中南米にも支援' },
+  36:{ gdp:'1.7兆ドル', gdpRank:12, currentAccount:'黒字（資源輸出増で改善）', caSign:1, fiscal:'赤字からほぼ均衡へ改善中', fiscalSign:0, debt:'44%（低水準）', worldSharePct:1.6, worldRank:12, co2Pct:1.1, oda:'DAC加盟・太平洋島嶼国・東南アジアへの援助に重点' },
 };
 
 const REGION_CLASS = {
@@ -1002,9 +1175,16 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
 let currentTab = 0;
 let currentInfo = null;
 let currentCountryId = null;
+let econView = 'work'; // 'work' | 'country' | 'earth'
+
+function switchEconView(v){
+  econView = v;
+  if(currentInfo) renderCards(currentInfo, 4);
+}
 
 function switchTab(n){
   currentTab = n;
+  if(n !== 4) econView = 'work'; // 労働タブ以外から戻ったときリセット
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
   if(currentInfo) renderCards(currentInfo, n);
 }
@@ -1017,6 +1197,7 @@ function card(icon, title, body, badge){
 function renderCards(info, tab){
   const pb = document.getElementById('pb');
   pb.className = '';
+  pb.style.gridTemplateColumns = ''; // タブ切替時にCSS定義へリセット
   if(tab === 0){
     pb.innerHTML =
       card('🍚','食文化', info.food) +
@@ -1053,39 +1234,175 @@ function renderCards(info, tab){
       card('🎨','色・数字の意味', v.color, 'univ');
   } else if(tab === 4){
     const w = WORK_DB[currentCountryId];
+    const e = ECON_DB[currentCountryId];
     if(!w){ pb.innerHTML='<div class="no-data">このセクションは主要13カ国のみ対応しています</div>'; return; }
-    const minPerK = Math.round(1000 / w.hourly * 60); // 1000円を稼ぐのに必要な分数
-    const hStr = minPerK >= 60
-      ? `${Math.floor(minPerK/60)}時間${minPerK%60>0?minPerK%60+'分':''}`
-      : `${minPerK}分`;
-    const jpMin = Math.round(1000 / 2850 * 60); // 日本の基準（21分）
-    const diff = minPerK === jpMin ? '＝日本と同等'
-               : minPerK < jpMin ? `日本より${jpMin-minPerK}分 短い（高賃金）`
-               : `日本より${minPerK-jpMin}分 長い（低賃金）`;
-    pb.innerHTML =
-      card('⏱','年間実労働時間', w.annual) +
-      card('📋','法定労働時間', w.standard) +
-      card('🌅','起床・就寝の目安', `起床：${w.wake}<br>就寝：${w.sleep}`) +
-      card('💴','平均時給（円換算）', `<span style="font-size:1.4em;font-weight:600;color:#178DDC">${w.hourly.toLocaleString()}円/h</span>`) +
-      `<div class="card" style="background:rgba(239,159,39,0.12);border:1px solid rgba(239,159,39,0.35)">
-        <div class="card-title">🎯 1,000円を稼ぐのに必要な時間</div>
-        <div class="card-body">
-          <span style="font-size:1.6em;font-weight:700;color:#c07010">${hStr}</span>
-          <br><span style="font-size:0.9em;color:var(--tx2);margin-top:4px;display:block">${diff}</span>
-          <span style="font-size:0.85em;color:var(--tx3)">${w.note}</span>
-        </div>
-      </div>`;
+
+    // ── スイッチャー共通HTML ──
+    const sw = `<div class="econ-switcher">
+      <button class="econ-sw-btn${econView==='work'?' active':''}" onclick="switchEconView('work')">💴 労働・賃金</button>
+      <button class="econ-sw-btn${econView==='country'?' active':''}" onclick="switchEconView('country')">📊 国単位</button>
+      <button class="econ-sw-btn${econView==='earth'?' active':''}" onclick="switchEconView('earth')">🌍 地球単位</button>
+    </div>`;
+
+    // ══════════════════════════════════
+    // 💴 労働・賃金ビュー
+    // ══════════════════════════════════
+    if(econView === 'work'){
+      const minPerK = Math.round(1000 / w.hourly * 60);
+      const hStr = minPerK >= 60 ? `${Math.floor(minPerK/60)}時間${minPerK%60>0?minPerK%60+'分':''}` : `${minPerK}分`;
+      const jpMin = Math.round(1000 / 2850 * 60);
+      const diff = minPerK === jpMin ? '＝日本と同等'
+                 : minPerK < jpMin ? `日本比 ${jpMin-minPerK}分 短い（高賃金）`
+                 : `日本比 ${minPerK-jpMin}分 長い（低賃金）`;
+      let ptRow = '';
+      if(w.parttime){
+        const ptMin = Math.round(1000 / w.parttime * 60);
+        const ptStr = ptMin >= 60 ? `${Math.floor(ptMin/60)}時間${ptMin%60>0?ptMin%60+'分':''}` : `${ptMin}分`;
+        ptRow = `<div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bd)">
+          <span style="font-size:0.82em;color:var(--tx3)">アルバイト・パート</span><br>
+          <span style="font-size:1.2em;font-weight:600;color:#4a8a10">${w.parttime.toLocaleString()}円/h</span>
+          <span style="font-size:0.84em;color:var(--tx2);margin-left:6px">→ 1,000円に ${ptStr}</span>
+          <br><span style="font-size:0.78em;color:var(--tx3)">${w.parttimeNote}</span>
+        </div>`;
+      }
+      pb.innerHTML = sw +
+        `<div class="card">
+          <div class="card-title">⏱ 労働時間</div>
+          <div class="card-body">
+            <div style="margin-bottom:6px"><span style="font-size:0.82em;color:var(--tx3)">年間実働</span><br><strong>${w.annual}</strong></div>
+            <div><span style="font-size:0.82em;color:var(--tx3)">法定</span><br>${w.standard}</div>
+          </div>
+        </div>` +
+        `<div class="card">
+          <div class="card-title">💴 時給比較</div>
+          <div class="card-body">
+            <span style="font-size:0.82em;color:var(--tx3)">全体平均</span><br>
+            <span style="font-size:1.35em;font-weight:600;color:#178DDC">${w.hourly.toLocaleString()}円/h</span>
+            ${ptRow}
+          </div>
+        </div>` +
+        `<div class="card">
+          <div class="card-title">🌅 起床・就寝</div>
+          <div class="card-body">
+            <div style="margin-bottom:5px">🌄 起床 <strong>${w.wake}</strong></div>
+            <div>🌙 就寝 <strong>${w.sleep}</strong></div>
+          </div>
+        </div>` +
+        `<div class="card" style="background:rgba(239,159,39,0.10);border:1px solid rgba(239,159,39,0.28)">
+          <div class="card-title">🎯 1,000円を稼ぐ時間</div>
+          <div class="card-body">
+            <span style="font-size:1.4em;font-weight:700;color:#c07010">${hStr}</span>
+            <span style="font-size:0.84em;color:var(--tx2)">（全体平均）</span>
+            <br><span style="font-size:0.82em;color:var(--tx2)">${diff}</span>
+            <br><span style="font-size:0.79em;color:var(--tx3)">${w.note}</span>
+          </div>
+        </div>`;
+
+    // ══════════════════════════════════
+    // 📊 国単位ビュー
+    // ══════════════════════════════════
+    } else if(econView === 'country'){
+      if(!e){ pb.innerHTML = sw + `<div class="no-data" style="grid-column:1/-1">この国の経済データはありません</div>`; return; }
+      const caColor  = e.caSign > 0 ? '#639922' : e.caSign < 0 ? '#E24B4A' : 'var(--tx2)';
+      const fiColor  = e.fiscalSign > 0 ? '#639922' : e.fiscalSign < 0 ? '#E24B4A' : 'var(--tx2)';
+      const caChip   = e.caSign > 0 ? `<span class="econ-sign-chip econ-sign-pos">▲ 黒字</span>`
+                     : e.caSign < 0 ? `<span class="econ-sign-chip econ-sign-neg">▼ 赤字</span>`
+                     : `<span class="econ-sign-chip" style="background:var(--bg3);color:var(--tx2)">─ ほぼ均衡</span>`;
+      const fiChip   = e.fiscalSign > 0 ? `<span class="econ-sign-chip econ-sign-pos">▲ 黒字</span>`
+                     : e.fiscalSign < 0 ? `<span class="econ-sign-chip econ-sign-neg">▼ 赤字</span>`
+                     : `<span class="econ-sign-chip" style="background:var(--bg3);color:var(--tx2)">─ 均衡</span>`;
+      // 政府債務バー（100%=普通, 200%=異常に高い）
+      const debtNum  = parseFloat(e.debt) || 0;
+      const debtBarW = Math.min(debtNum / 250 * 100, 100).toFixed(1);
+      const debtColor= debtNum > 150 ? '#E24B4A' : debtNum > 80 ? '#EF9F27' : '#639922';
+      // GDPシェアバー（26%=米国MAX）
+      const gdpBarW  = Math.min(e.worldSharePct / 26 * 100, 100).toFixed(1);
+
+      pb.innerHTML = sw +
+        `<div class="econ-full-card" style="background:rgba(55,138,221,0.06);border:1px solid rgba(55,138,221,0.22)">
+          <div style="font-size:13px;font-weight:600;color:var(--tx2);padding-bottom:6px;border-bottom:0.5px solid var(--bd)">
+            📊 国単位の損益
+          </div>
+          <!-- GDP -->
+          <div>
+            <span class="econ-section-label">名目GDP</span>
+            <span class="econ-value">${e.gdp}</span>
+            <span style="font-size:0.82em;color:var(--tx3);margin-left:6px">世界${e.gdpRank}位</span>
+            <div class="econ-bar-bg"><div class="econ-bar-fill" style="width:${gdpBarW}%;background:#378ADD"></div></div>
+            <div style="font-size:0.76em;color:var(--tx3);margin-top:2px">世界GDPシェア ${e.worldSharePct}%（米国=100%基準）</div>
+          </div>
+          <!-- 経常収支 / 財政収支 -->
+          <div class="econ-grid2">
+            <div>
+              <span class="econ-section-label">経常収支 ${caChip}</span>
+              <span class="econ-value" style="color:${caColor};font-size:1em">${e.currentAccount}</span>
+            </div>
+            <div>
+              <span class="econ-section-label">財政収支 ${fiChip}</span>
+              <span class="econ-value" style="color:${fiColor};font-size:1em">${e.fiscal}</span>
+            </div>
+          </div>
+          <!-- 政府債務 -->
+          <div>
+            <span class="econ-section-label">政府債務（対GDP比）</span>
+            <span class="econ-value" style="color:${debtColor}">${e.debt}</span>
+            <div class="econ-bar-bg"><div class="econ-bar-fill" style="width:${debtBarW}%;background:${debtColor}"></div></div>
+            <div style="font-size:0.76em;color:var(--tx3);margin-top:2px">目安: 〜60%健全 ／ 〜100%要注意 ／ 100%超は高水準</div>
+          </div>
+        </div>`;
+
+    // ══════════════════════════════════
+    // 🌍 地球単位ビュー
+    // ══════════════════════════════════
+    } else {
+      if(!e){ pb.innerHTML = sw + `<div class="no-data" style="grid-column:1/-1">この国の経済データはありません</div>`; return; }
+      const maxGdp  = 26;  // 米国
+      const gdpBarW = (e.worldSharePct / maxGdp * 100).toFixed(1);
+
+      pb.innerHTML = sw +
+        `<div class="econ-full-card" style="background:rgba(99,153,34,0.06);border:1px solid rgba(99,153,34,0.22)">
+          <div style="font-size:13px;font-weight:600;color:var(--tx2);padding-bottom:6px;border-bottom:0.5px solid var(--bd)">
+            🌍 地球単位の損益
+          </div>
+          <!-- GDPシェア -->
+          <div>
+            <span class="econ-section-label">世界GDPシェア</span>
+            <span class="econ-value">${e.worldSharePct}%</span>
+            <span style="font-size:0.82em;color:var(--tx3);margin-left:6px">世界${e.worldRank}位</span>
+            <div class="econ-bar-bg"><div class="econ-bar-fill" style="width:${gdpBarW}%;background:#378ADD"></div></div>
+          </div>
+          <!-- ODA -->
+          <div style="padding-top:8px;border-top:0.5px solid var(--bd)">
+            <span class="econ-section-label">国際援助・地球貢献</span>
+            <div style="font-size:0.92em;line-height:1.5">${e.oda}</div>
+          </div>
+        </div>`;
+    }
   }
 }
 
 function showPanel(info, id){
   currentInfo = info;
   currentCountryId = id;
+  // タブ・ビューは維持（リセットしない）
   document.getElementById('pflag').textContent = info.flag;
   document.getElementById('pname').textContent = info.name;
   document.getElementById('psub').textContent  = info.region;
   document.getElementById('pinfo').textContent = '';
+  // 都道府県ボタン：日本のときだけ表示
+  const jBtn = document.getElementById('japan-map-btn');
+  if(jBtn) jBtn.style.display = id === 392 ? '' : 'none';
+  // 都道府県モーダルは自動では開かない。他の国クリックで閉じる。
+  const js = document.getElementById('japan-section');
+  if(js && id !== 392) js.classList.remove('open');
   renderCards(info, currentTab);
+}
+
+function openJapanMap(){
+  const js = document.getElementById('japan-section');
+  if(!js) return;
+  js.classList.add('open');
+  requestAnimationFrame(() => renderJapanMap());
 }
 
 // 検索
@@ -1254,6 +1571,130 @@ function resetView(){
   scale=1; tx=0; ty=0; applyT();
 }
 function applyT(){ g.attr('transform',`translate(${tx},${ty}) scale(${scale})`); }
+
+// ── 最低賃金 JSON を動的ロード（checker.py が生成） ───────────────────────
+fetch('/data/minwage_jp.json')
+  .then(r => r.json())
+  .then(data => {
+    if(data && data.wages){
+      MINWAGE_JP = data.wages;
+      const updEl = document.getElementById('minwage-updated');
+      if(updEl && data.updated) updEl.textContent = `（${data.updated} 改定）`;
+      const noteEl = document.getElementById('pref-note');
+      if(noteEl && data.updated) noteEl.innerHTML = `地域別最低賃金（${data.updated}改定）<br>出典：厚生労働省 ／ checker.py 自動取得`;
+      // 既に日本マップが開いていれば再描画
+      if(currentCountryId === 392 && _jpTopo) _drawPrefMap(_jpTopo);
+    }
+  })
+  .catch(() => {}); // ファイルがなければフォールバック値をそのまま使用
+
+// ── 都道府県最低賃金マップ ─────────────────────────────────────────────────
+let _jpTopo = null;
+
+function prefBare(s){ return s ? s.replace(/[都道府県]$/, '') : ''; }
+function prefFull(bare){
+  if(bare === '北海道') return '北海道';
+  if(bare === '東京')   return '東京都';
+  if(bare === '大阪' || bare === '京都') return bare + '府';
+  return bare + '県';
+}
+function prefWageColor(w){
+  if(w >= 1100) return '#b30000';
+  if(w >= 1050) return '#e34a33';
+  if(w >= 1000) return '#fc8d59';
+  if(w >=  960) return '#fdcc8a';
+  return '#fef0d9';
+}
+function prefWage(rawName){
+  const bare = prefBare(rawName);
+  return MINWAGE_JP[bare] ?? MINWAGE_JP[rawName];
+}
+
+function renderJapanMap(){
+  const svgEl = document.getElementById('japan-svg');
+  if(!svgEl) return;
+  if(_jpTopo){ _drawPrefMap(_jpTopo); return; }
+  fetch('https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.topojson')
+    .then(r => r.json())
+    .then(topo => { _jpTopo = topo; _drawPrefMap(topo); })
+    .catch(() => {
+      const col = document.getElementById('japan-map-col');
+      if(col) col.innerHTML = '<div style="padding:12px;color:var(--tx3);font-size:12px">地図の読み込みに失敗しました<br>ネットワーク接続を確認してください</div>';
+    });
+}
+
+function _drawPrefMap(topo){
+  const svgEl = document.getElementById('japan-svg');
+  if(!svgEl) return;
+  const col = document.getElementById('japan-map-col');
+  const W = col ? col.clientWidth  : 230;
+  const H = col ? col.clientHeight : 192;
+
+  const objKey = Object.keys(topo.objects)[0];
+  const features = topojson.feature(topo, topo.objects[objKey]).features;
+  const fc = { type:'FeatureCollection', features };
+
+  const proj2 = d3.geoMercator().fitSize([W - 8, H - 28], fc);
+  const path2 = d3.geoPath().projection(proj2);
+  const svg2  = d3.select(svgEl);
+  svg2.selectAll('*').remove();
+
+  // 順位テーブル
+  const sorted = Object.entries(MINWAGE_JP).sort(([,a],[,b]) => b - a);
+  const rankOf = {};
+  sorted.forEach(([n,], i) => { rankOf[n] = i + 1; });
+  const avg = Math.round(sorted.reduce((s,[,v]) => s + v, 0) / sorted.length);
+
+  const tip   = document.getElementById('pref-tip');
+  const nameEl= document.getElementById('pref-name');
+  const wageEl= document.getElementById('pref-wage');
+  const subEl = document.getElementById('pref-sub');
+
+  svg2.selectAll('.jpref-path')
+    .data(features)
+    .enter().append('path')
+    .attr('class', 'jpref-path')
+    .attr('d', path2)
+    .attr('fill', d => {
+      const w = prefWage(d.properties.nam_ja || d.properties.name || '');
+      return prefWageColor(w ?? 951);
+    })
+    .on('mouseover', (evt, d) => {
+      const raw  = d.properties.nam_ja || d.properties.name || '';
+      const wage = prefWage(raw);
+      if(tip){
+        tip.textContent = `${prefFull(prefBare(raw))}：${wage != null ? wage.toLocaleString() + '円' : '-'}`;
+        tip.style.opacity = '1';
+      }
+    })
+    .on('mousemove', (evt) => {
+      if(!tip || !col) return;
+      const rect = col.getBoundingClientRect();
+      tip.style.left = (evt.clientX - rect.left) + 'px';
+      tip.style.top  = (evt.clientY - rect.top - 28) + 'px';
+    })
+    .on('mouseout', () => { if(tip) tip.style.opacity = '0'; })
+    .on('click', (evt, d) => {
+      const raw  = d.properties.nam_ja || d.properties.name || '';
+      const bare = prefBare(raw);
+      const full = prefFull(bare);
+      const wage = prefWage(raw);
+      const rank = rankOf[bare] ?? rankOf[raw] ?? '–';
+      const diff = wage != null ? wage - avg : null;
+
+      svg2.selectAll('.jpref-path').classed('jpref-active', false);
+      d3.select(evt.currentTarget).classed('jpref-active', true);
+      if(tip) tip.style.opacity = '0';
+
+      if(nameEl) nameEl.textContent = full;
+      if(wageEl) wageEl.innerHTML = wage != null
+        ? `<span style="font-size:2em;font-weight:700;color:#178DDC">${wage.toLocaleString()}</span><span style="font-size:0.9em;color:var(--tx2)"> 円/時</span>`
+        : '<span style="color:var(--tx3)">データなし</span>';
+      if(subEl) subEl.innerHTML = wage != null
+        ? `全国 <strong>${rank}</strong> 位（47都道府県中）　全国平均比 <strong style="color:${diff >= 0 ? '#178DDC' : '#c07010'}">${diff >= 0 ? '+' : ''}${diff}円</strong>`
+        : '';
+    });
+}
 </script>
 </body>
 </html>

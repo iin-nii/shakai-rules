@@ -9,28 +9,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f4f3ee;
-  --color-text-primary: #1a1a18;
-  --color-text-secondary: #5f5e5a;
-  --color-text-tertiary: #888780;
-  --color-border-tertiary: rgba(0,0,0,0.12);
-  --color-border-secondary: rgba(0,0,0,0.22);
-  --font-sans: system-ui, -apple-system, sans-serif;
+  --color-background-primary: #0f172a;
+  --color-background-secondary: #1e293b;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-border-tertiary: #334155;
+  --color-border-secondary: #475569;
+  --font-sans: 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-primary: #1c1c1a;
-    --color-background-secondary: #2a2a27;
-    --color-text-primary: #f0ede6;
-    --color-text-secondary: #a8a69f;
-    --color-text-tertiary: #6e6c67;
-    --color-border-tertiary: rgba(255,255,255,0.1);
-    --color-border-secondary: rgba(255,255,255,0.2);
-  }
 }
 
 body {
@@ -96,7 +84,7 @@ h1 {
 
 input[type="range"] {
   flex: 1;
-  accent-color: #378ADD;
+  accent-color: #38bdf8;
   height: 4px;
   cursor: pointer;
 }
@@ -136,8 +124,8 @@ select {
   color: var(--color-text-primary);
 }
 
-.metric-value.loss { color: #E24B4A; }
-.metric-value.gdp  { color: #178DDC; }
+.metric-value.loss { color: #f87171; }
+.metric-value.gdp  { color: #38bdf8; }
 
 .divider {
   border: none;
@@ -177,9 +165,9 @@ select {
   display: inline-block;
   flex-shrink: 0;
 }
-.dot.ok      { background: #639922; }
-.dot.loading { background: #EF9F27; animation: pulse 1s infinite; }
-.dot.err     { background: #E24B4A; }
+.dot.ok      { background: #4ade80; }
+.dot.loading { background: #fbbf24; animation: pulse 1s infinite; }
+.dot.err     { background: #f87171; }
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
@@ -393,15 +381,14 @@ function calc() {
   document.getElementById('m-ratio').textContent = ratio.toFixed(1) + '%';
   document.getElementById('m-cum').textContent   = cum.toFixed(2);
 
-  const isDark    = matchMedia('(prefers-color-scheme: dark)').matches;
-  const textColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
-  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+  const textColor = 'rgba(148,163,184,0.85)';
+  const gridColor = '#334155';
 
   const data = {
     labels: ['生産性低下', '失業損失', 'インフレ損耗'],
     datasets: [{
       data: [+lossP.toFixed(4), +lossU.toFixed(4), +lossI.toFixed(4)],
-      backgroundColor: ['#378ADD', '#E24B4A', '#EF9F27'],
+      backgroundColor: ['#38bdf8', '#f87171', '#fbbf24'],
       borderRadius: 4,
       borderSkipped: false
     }]
