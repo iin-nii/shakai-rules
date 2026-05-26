@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人生設計シミュレーター</title>
+<style>
+:root {
+  --p: #3b5bdb; --p2: #4263eb; --p-lt: #e7f5ff;
+  --g: #2f9e44; --g-lt: #ebfbee;
+  --o: #e67700; --o-lt: #fff3bf;
+  --v: #7048e8; --v-lt: #f3f0ff;
+  --r: #c92a2a;
+  --bg: #f8f9fa; --card: #fff; --text: #212529; --muted: #868e96; --border: #dee2e6;
+  --radius: 14px; --shadow: 0 2px 8px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Hiragino Sans','Meiryo',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+a{color:var(--p)}
+
+/* ── Layout ── */
+.wrap{max-width:860px;margin:0 auto;padding:28px 14px 60px}
+
+/* ── Header ── */
+.hdr{text-align:center;margin-bottom:32px}
+.hdr h1{font-size:clamp(22px,5vw,32px);font-weight:900;letter-spacing:-.5px;
+  background:linear-gradient(120deg,var(--p),var(--v));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr p{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* ── Progress ── */
+.prog{display:flex;align-items:center;justify-content:center;margin-bottom:30px;gap:0;flex-wrap:nowrap}
+.ps{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pc{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;background:var(--border);color:var(--muted);transition:.25s}
+.pc.on{background:var(--p);color:#fff}
+.pc.ok{background:var(--g);color:#fff}
+.pl{font-size:10px;color:var(--muted);white-space:nowrap}
+.pline{width:40px;height:2px;background:var(--border);margin-bottom:22px;transition:.25s}
+.pline.ok{background:var(--g)}
+@media(max-width:480px){.pline{width:18px}.pl{font-size:9px}}
+
+/* ── Panel ── */
+.panel{display:none}.panel.on{display:block}
+
+/* ── Card ── */
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:18px}
+.ctitle{font-size:17px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+
+/* ── Form ── */
+.fg{margin-bottom:20px}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#444}
+input[type=number]{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;
+  font-size:15px;outline:none;transition:.2s;font-family:inherit}
+input[type=number]:focus{border-color:var(--p)}
+input[type=range]{width:100%;accent-color:var(--p);cursor:pointer;height:6px}
+.rv{font-weight:800;color:var(--p);font-size:18px}
+.rrow{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+
+/* ── Chips / toggle items ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:9px}
+.chip{display:flex;align-items:center;gap:9px;padding:9px 13px;border:2px solid var(--border);
+  border-radius:10px;cursor:pointer;font-size:13px;transition:.18s;user-select:none}
+.chip:hover{border-color:var(--p);background:var(--p-lt)}
+.chip.sel{border-color:var(--p);background:var(--p-lt);color:var(--p);font-weight:700}
+.chip input[type=checkbox],.chip input[type=radio]{accent-color:var(--p);width:16px;height:16px;flex-shrink:0;pointer-events:none}
+.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:auto;white-space:nowrap}
+.b-green{background:var(--g-lt);color:var(--g)}
+.b-orange{background:var(--o-lt);color:var(--o)}
+.b-blue{background:var(--p-lt);color:var(--p)}
+.b-gray{background:#f1f3f5;color:#868e96}
+
+/* ── Career cards ── */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.ccard{border:2px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:.2s}
+.ccard:hover:not(.disabled){border-color:var(--p);transform:translateY(-2px);box-shadow:0 4px 12px rgba(59,91,219,.12)}
+.ccard.sel{border-color:var(--p);background:var(--p-lt)}
+.ccard.disabled{opacity:.42;cursor:not-allowed}
+.cico{font-size:26px;margin-bottom:7px}
+.cname{font-weight:800;font-size:14px;margin-bottom:5px}
+.cmeta{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.csal{color:var(--g);font-weight:700}
+
+/* ── Buttons ── */
+.btn{padding:11px 26px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;transition:.18s;font-family:inherit}
+.btn-p{background:var(--p);color:#fff}
+.btn-p:hover{background:var(--p2);transform:translateY(-1px)}
+.btn-s{background:#f1f3f5;color:#495057}
+.btn-s:hover{background:var(--border)}
+.brow{display:flex;justify-content:space-between;margin-top:22px}
+.brow .right{margin-left:auto}
+
+/* ── Requirements ── */
+.reqlist{list-style:none;display:flex;flex-direction:column;gap:8px}
+.req{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:9px;font-size:13px}
+.req.done{background:var(--g-lt);color:#1a6b2a}
+.req.todo{background:var(--o-lt);color:#7d4e00}
+.req .ico{flex-shrink:0;font-size:15px;margin-top:1px}
+
+/* ── Route cards ── */
+.rcards{display:flex;flex-direction:column;gap:20px}
+.rcard{border-radius:16px;overflow:hidden;border:2px solid transparent}
+.rhead{padding:18px 22px;color:#fff}
+.rhead h3{font-size:18px;font-weight:900;margin-bottom:3px}
+.rhead p{font-size:12px;opacity:.85}
+.rhead.stable{background:linear-gradient(120deg,#1971c2,#3b5bdb)}
+.rhead.invest{background:linear-gradient(120deg,#2f9e44,#0c8599)}
+.rhead.enjoy {background:linear-gradient(120deg,#e67700,#f03e3e)}
+.rhead.free  {background:linear-gradient(120deg,#7048e8,#c2255c)}
+.rbody{background:#fff;padding:22px}
+.rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.rstat{text-align:center;padding:11px 6px;background:var(--bg);border-radius:9px}
+.rstat-l{font-size:10px;color:var(--muted);margin-bottom:3px}
+.rstat-v{font-size:16px;font-weight:900}
+@media(max-width:500px){.rstats{grid-template-columns:repeat(2,1fr)}}
+
+/* ── Timeline ── */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
+.tli{position:relative;margin-bottom:14px}
+.tldot{position:absolute;left:-18px;top:5px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px currentColor}
+.tl-age{font-size:11px;font-weight:800;margin-bottom:1px}
+.tl-txt{font-size:13px}
+.tl-money{font-size:12px;font-weight:700;margin-top:1px}
+
+/* ── Recalc tabs ── */
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.tab{padding:7px 18px;border:2px solid var(--border);border-radius:99px;font-size:12px;font-weight:700;
+  cursor:pointer;background:#fff;color:var(--muted);transition:.18s}
+.tab.on{border-color:var(--p);color:var(--p);background:var(--p-lt)}
+
+/* ── Expense summary ── */
+.exp-total{background:var(--bg);padding:14px 18px;border-radius:10px;margin-top:10px}
+.exp-label{font-size:12px;color:var(--muted)}
+.exp-val{font-size:28px;font-weight:900;color:var(--r)}
+
+/* ── Section divider ── */
+.divtitle{font-size:13px;font-weight:700;color:var(--muted);margin:6px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <h1>🗺️ 人生設計シミュレーター</h1>
+    <p>年齢・資格・目標から、あなただけの複数人生ルートを描き出す</p>
+  </div>
+
+  <div class="prog" id="prog"></div>
+
+  <!-- =========== PANEL 1 =========== -->
+  <section class="panel on" id="panel-1">
+    <div class="card">
+      <div class="ctitle">📋 基本情報</div>
+
+      <div class="fg">
+        <label>現在の年齢</label>
+        <input type="number" id="inp-age" value="25" min="15" max="64" placeholder="例: 25">
+      </div>
+
+      <div class="fg">
+        <label>現在の貯蓄額（万円）</label>
+        <input type="number" id="inp-savings" value="50" min="0" placeholder="例: 50">
+        <div class="rrow"><span style="font-size:12px;color:var(--muted)">0万円からでも大丈夫！</span><span class="rv" id="d-savings">50万円</span></div>
+      </div>
+
+      <div class="fg">
+        <label>現在の雇用形態</label>
+        <div class="grid2" id="emp-grid">
+          <div class="chip" data-emp="student" onclick="pickEmp(this)"><input type="radio" name="emp">🎓 学生</div>
+          <div class="chip" data-emp="part"    onclick="pickEmp(this)"><input type="radio" name="emp">💼 バイト・パート</div>
+          <div class="chip" data-emp="full"    onclick="pickEmp(this)"><input type="radio" name="emp">🏢 正社員</div>
+          <div class="chip" data-emp="contract" onclick="pickEmp(this)"><input type="radio" name="emp">📝 契約・派遣</div>
+          <div class="chip" data-emp="freelance" onclick="pickEmp(this)"><input type="radio" name="emp">🚀 フリーランス</div>
+          <div class="chip" data-emp="none"    onclick="pickEmp(this)"><input type="radio" name="emp">🔍 無職・求職中</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>正社員経験の年数（おおよそ）</label>
+        <input type="number" id="inp-fullexp" value="0" min="0" max="40" placeholder="例: 3">
+        <div class="rrow"><span style="font-size:12px;color:var(--muted)">経験なしは0</span><span class="rv" id="d-fullexp">0年</span></div>
+      </div>
+
+      <div class="brow right"><button class="btn btn-p" onclick="go(2)">次へ →</button></div>
+    </div>
+  </section>
+
+  <!-- =========== PANEL 2 =========== -->
+  <section class="panel" id="panel-2">
+    <div class="card">
+      <div class="ctitle">🎓 保有している資格・スキル</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">現在持っているものにチェック</p>
+      <div class="grid2" id="own-grid"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">📚 これから取得したい資格（任意）</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">取りたいものを選んでおくとルートに反映されます</p>
+      <div class="grid2" id="tgt-grid"></div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-s" onclick="go(1)">← 戻る</button>
+      <button class="btn btn-p" onclick="go(3)">次へ →</button>
+    </div>
+  </section>
+
+  <!-- =========== PANEL 3 =========== -->
+  <section class="panel" id="panel-3">
+    <div class="card">
+      <div class="ctitle">💼 目指したい職業・分野</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">年齢・資格から現実的に目指せる職業です。複数選択可</p>
+      <div class="cgrid" id="career-grid"></div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-s" onclick="go(2)">← 戻る</button>
+      <button class="btn btn-p" onclick="go(4)">次へ →</button>
+    </div>
+  </section>
+
+  <!-- =========== PANEL 4 =========== -->
+  <section class="panel" id="panel-4">
+    <div class="card">
+      <div class="ctitle">💰 月間生活費の上限設定</div>
+      <div id="sliders"></div>
+      <div class="exp-total">
+        <div class="exp-label">月間支出合計（上限）</div>
+        <div class="exp-val" id="total-exp">20万円</div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-s" onclick="go(3)">← 戻る</button>
+      <button class="btn btn-p" onclick="buildRoutes()">✨ ルートを生成する</button>
+    </div>
+  </section>
+
+  <!-- =========== PANEL 5 =========== -->
+  <section class="panel" id="panel-5">
+    <div id="req-section"></div>
+
+    <div class="card">
+      <div class="ctitle">🔄 年代別「もしあの時から」シミュレーション</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">「もし○歳から同条件でやり直したら」の試算です</p>
+      <div class="tabs" id="rtabs"></div>
+      <div id="rcalc-area"></div>
+    </div>
+
+    <div id="routes-area"></div>
+
+    <div class="brow">
+      <button class="btn btn-s" onclick="go(4)">← 条件を変更</button>
+      <button class="btn btn-p" onclick="go(1)">🔁 最初からやり直す</button>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<script>
+/* ================================================================
+   DATA
+================================================================ */
+const QUALS = [
+  {id:'license', name:'普通自動車免許',    cat:'生活',   minAge:18, diff:1, months:2  },
+  {id:'boki3',   name:'日商簿記3級',       cat:'経理',   minAge:15, diff:1, months:3  },
+  {id:'boki2',   name:'日商簿記2級',       cat:'経理',   minAge:15, diff:2, months:6  },
+  {id:'boki1',   name:'日商簿記1級',       cat:'経理',   minAge:15, diff:4, months:24 },
+  {id:'fp3',     name:'FP3級',             cat:'金融',   minAge:15, diff:1, months:2  },
+  {id:'fp2',     name:'FP2級',             cat:'金融',   minAge:15, diff:2, months:4  },
+  {id:'fp1',     name:'FP1級',             cat:'金融',   minAge:15, diff:4, months:12 },
+  {id:'mos',     name:'MOS（Office）',     cat:'IT',     minAge:15, diff:1, months:1  },
+  {id:'itp',     name:'ITパスポート',      cat:'IT',     minAge:15, diff:1, months:2  },
+  {id:'fg',      name:'基本情報技術者',    cat:'IT',     minAge:15, diff:2, months:6  },
+  {id:'ao',      name:'応用情報技術者',    cat:'IT',     minAge:15, diff:3, months:12 },
+  {id:'toeic6',  name:'TOEIC 600点+',     cat:'語学',   minAge:15, diff:2, months:6  },
+  {id:'toeic8',  name:'TOEIC 800点+',     cat:'語学',   minAge:15, diff:3, months:12 },
+  {id:'eiken2',  name:'英検2級',           cat:'語学',   minAge:15, diff:2, months:4  },
+  {id:'takken',  name:'宅地建物取引士',    cat:'不動産', minAge:18, diff:3, months:6  },
+  {id:'gyosei',  name:'行政書士',          cat:'法務',   minAge:18, diff:3, months:12 },
+  {id:'syaho',   name:'社会保険労務士',    cat:'法務',   minAge:18, diff:4, months:18 },
+  {id:'chusho',  name:'中小企業診断士',    cat:'経営',   minAge:18, diff:4, months:24 },
+  {id:'kango',   name:'看護師免許',        cat:'医療',   minAge:18, diff:3, months:36 },
+  {id:'kaigo1',  name:'介護初任者研修',    cat:'介護',   minAge:18, diff:1, months:1  },
+  {id:'kaigo2',  name:'介護福祉士',        cat:'介護',   minAge:18, diff:3, months:36 },
+  {id:'kiken4',  name:'危険物取扱者乙4',  cat:'工業',   minAge:15, diff:1, months:2  },
+  {id:'denki2',  name:'電気工事士2種',     cat:'工業',   minAge:15, diff:2, months:3  },
+  {id:'kensetsu',name:'建設業経理士2級',   cat:'建設',   minAge:18, diff:2, months:6  },
+];
+
+const CAREERS = [
+  {
+    id:'se', icon:'💻', name:'SE／プログラマー', cat:'IT', maxAge:35,
+    req:[], pref:['itp','fg','ao'],
+    start:350, peak:750, midYrs:4,
+    stability:'高', desc:'未経験可求人多数。スキル次第で収入青天井',
+  },
+  {
+    id:'kango', icon:'🏥', name:'看護師', cat:'医療', maxAge:50,
+    req:['kango'], pref:[],
+    start:420, peak:600, midYrs:5,
+    stability:'非常に高', desc:'資格必須だが全国どこでも働ける',
+  },
+  {
+    id:'kaigo', icon:'🤝', name:'介護職員', cat:'介護', maxAge:65,
+    req:[], pref:['kaigo1','kaigo2'],
+    start:270, peak:370, midYrs:3,
+    stability:'非常に高', desc:'無資格からスタートOK。圧倒的需要',
+  },
+  {
+    id:'sales', icon:'📊', name:'営業職', cat:'営業', maxAge:45,
+    req:[], pref:['license'],
+    start:320, peak:700, midYrs:3,
+    stability:'中', desc:'業界問わず活かせる。インセンティブで高収入も',
+  },
+  {
+    id:'acct', icon:'📒', name:'経理・会計職', cat:'経理', maxAge:45,
+    req:['boki3'], pref:['boki2','boki1','fp2'],
+    start:330, peak:580, midYrs:4,
+    stability:'高', desc:'簿記資格が武器。安定したオフィスワーク',
+  },
+  {
+    id:'re', icon:'🏠', name:'不動産業', cat:'不動産', maxAge:55,
+    req:['takken'], pref:[],
+    start:380, peak:800, midYrs:4,
+    stability:'中', desc:'宅建で独立も視野。インセンティブ大',
+  },
+  {
+    id:'civil', icon:'🏛️', name:'公務員', cat:'行政', maxAge:29,
+    req:[], pref:[],
+    start:310, peak:580, midYrs:12,
+    stability:'最高', desc:'年齢制限あり。安定性・福利厚生は最高クラス',
+  },
+  {
+    id:'fl', icon:'🚀', name:'フリーランス', cat:'独立', maxAge:65,
+    req:[], pref:[],
+    start:300, peak:1000, midYrs:5,
+    stability:'低〜中', desc:'自由度最高。スキルと営業力が全て',
+  },
+  {
+    id:'inv', icon:'📈', name:'個人投資家（副業）', cat:'投資', maxAge:65,
+    req:[], pref:['fp2','fp1'],
+    start:100, peak:2000, midYrs:15,
+    stability:'低', desc:'副業からスタート可。複利の力で資産拡大',
+  },
+  {
+    id:'gyosei_sh', icon:'⚖️', name:'行政書士事務所', cat:'士業', maxAge:60,
+    req:['gyosei'], pref:[],
+    start:280, peak:700, midYrs:6,
+    stability:'中〜高', desc:'独立開業が目標。許認可・法務専門家',
+  },
+  {
+    id:'sr', icon:'📋', name:'社会保険労務士', cat:'士業', maxAge:60,
+    req:['syaho'], pref:[],
+    start:340, peak:800, midYrs:6,
+    stability:'高', desc:'人事・労務の専門家。企業顧問で安定収入',
+  },
+  {
+    id:'ele', icon:'⚡', name:'電気工事士', cat:'工業', maxAge:50,
+    req:['denki2'], pref:[],
+    start:320, peak:500, midYrs:4,
+    stability:'高', desc:'手に職。AIに代替されにくい実技職',
+  },
+  {
+    id:'it_mgr', icon:'🛡️', name:'ITマネージャー', cat:'IT', maxAge:40,
+    req:['fg'], pref:['ao'],
+    start:500, peak:900, midYrs:5,
+    stability:'高', desc:'SE経験の上位職。マネジメント×技術が武器',
+  },
+];
+
+const SLIDERS = [
+  {id:'food',  label:'食費（月）',           min:2, max:15, def:5  },
+  {id:'rent',  label:'家賃・住居費（月）',   min:3, max:25, def:7  },
+  {id:'util',  label:'通信・光熱費（月）',   min:1, max:6,  def:2  },
+  {id:'fun',   label:'娯楽・交際費（月）',   min:0, max:12, def:3  },
+  {id:'ins',   label:'保険・税金概算（月）', min:1, max:8,  def:3  },
+];
+
+const STEP_NAMES = ['基本情報','資格','職業','生活費','ルート'];
+const ROUTE_TYPES = [
+  {key:'stable', label:'安定ルート',       emoji:'🏛️', cls:'stable',
+   desc:'堅実なキャリア形成＋守りの資産運用', inc:1.0, ret:0.03, sv:0.45},
+  {key:'invest', label:'投資・資産形成ルート', emoji:'📈', cls:'invest',
+   desc:'積極的な投資で資産を加速させる高リターン路線', inc:1.0, ret:0.07, sv:0.55},
+  {key:'enjoy',  label:'楽しむルート',     emoji:'🎉', cls:'enjoy',
+   desc:'旅・趣味・経験を優先。資産形成はほどほどに', inc:0.9, ret:0.02, sv:0.15},
+  {key:'free',   label:'自由・副業ルート', emoji:'🚀', cls:'free',
+   desc:'複数収入源を構築。会社に依存しない生き方', inc:0.85, ret:0.05, sv:0.40},
+];
+
+/* ================================================================
+   STATE
+================================================================ */
+const S = {
+  step: 1,
+  age: 25, savings: 50, emp: '', fullExp: 0,
+  owned: [], target: [],
+  careers: [],
+  food:5, rent:7, util:2, fun:3, ins:3,
+};
+
+/* ================================================================
+   PROGRESS
+================================================================ */
+function renderProg() {
+  const el = document.getElementById('prog');
+  el.innerHTML = STEP_NAMES.map((n, i) => {
+    const s = i + 1;
+    const cls = s < S.step ? 'ok' : s === S.step ? 'on' : '';
+    const lCls = s < S.step ? 'ok' : '';
+    return `<div class="ps">
+      <div class="pc ${cls}">${s < S.step ? '✓' : s}</div>
+      <div class="pl">${n}</div>
+    </div>` + (s < 5 ? `<div class="pline ${lCls}"></div>` : '');
+  }).join('');
+}
+
+/* ================================================================
+   NAVIGATION
+================================================================ */
+function go(step) {
+  if (step === 2) {
+    S.age = parseInt(document.getElementById('inp-age').value) || 25;
+    S.savings = parseInt(document.getElementById('inp-savings').value) || 0;
+    S.fullExp = parseInt(document.getElementById('inp-fullexp').value) || 0;
+    buildQualGrids();
+  }
+  if (step === 3) buildCareerGrid();
+  if (step === 4) buildSliders();
+  if (step === 5) {
+    readSliders();
+    renderRequirements();
+    renderRecalcTabs();
+    renderRoutes();
+  }
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('panel-' + step).classList.add('on');
+  S.step = step;
+  renderProg();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ================================================================
+   STEP 1 helpers
+================================================================ */
+document.getElementById('inp-age').addEventListener('input', e => {
+  S.age = parseInt(e.target.value) || 25;
+});
+document.getElementById('inp-savings').addEventListener('input', e => {
+  S.savings = parseInt(e.target.value) || 0;
+  document.getElementById('d-savings').textContent = S.savings + '万円';
+});
+document.getElementById('inp-fullexp').addEventListener('input', e => {
+  S.fullExp = parseInt(e.target.value) || 0;
+  document.getElementById('d-fullexp').textContent = S.fullExp + '年';
+});
+function pickEmp(el) {
+  document.querySelectorAll('#emp-grid .chip').forEach(c => {
+    c.classList.remove('sel');
+    c.querySelector('input').checked = false;
+  });
+  el.classList.add('sel');
+  el.querySelector('input').checked = true;
+  S.emp = el.dataset.emp;
+}
+
+/* ================================================================
+   STEP 2 — Qualifications
+================================================================ */
+function buildQualGrids() {
+  const avail = QUALS.filter(q => q.minAge <= S.age);
+  document.getElementById('own-grid').innerHTML = avail.map(q => chipHtml(q, 'own')).join('');
+  refreshTargetGrid();
+}
+function refreshTargetGrid() {
+  const avail = QUALS.filter(q => q.minAge <= S.age && !S.owned.includes(q.id));
+  document.getElementById('tgt-grid').innerHTML = avail.map(q => chipHtml(q, 'tgt')).join('');
+}
+function chipHtml(q, mode) {
+  const sel = mode === 'own' ? S.owned.includes(q.id) : S.target.includes(q.id);
+  const dLabel = q.diff <= 1 ? '取りやすい' : q.diff <= 2 ? '普通' : q.diff <= 3 ? 'やや難' : '難関';
+  const bCls = q.diff <= 1 ? 'b-green' : q.diff <= 2 ? 'b-blue' : q.diff <= 3 ? 'b-orange' : 'b-gray';
+  return `<div class="chip${sel?' sel':''}" onclick="togQual('${q.id}','${mode}',this)">
+    <input type="checkbox"${sel?' checked':''}>
+    <span>${q.name}</span>
+    <span class="badge ${bCls}">${dLabel}</span>
+  </div>`;
+}
+function togQual(id, mode, el) {
+  const arr = mode === 'own' ? S.owned : S.target;
+  const i = arr.indexOf(id);
+  if (i === -1) { arr.push(id); el.classList.add('sel'); el.querySelector('input').checked = true; }
+  else          { arr.splice(i,1); el.classList.remove('sel'); el.querySelector('input').checked = false; }
+  if (mode === 'own') {
+    S.target = S.target.filter(x => !S.owned.includes(x));
+    refreshTargetGrid();
+  }
+}
+
+/* ================================================================
+   STEP 3 — Careers
+================================================================ */
+function buildCareerGrid() {
+  const grid = document.getElementById('career-grid');
+  grid.innerHTML = CAREERS.map(c => {
+    const ageOk = S.age <= c.maxAge;
+    const hasReq = c.req.every(r => S.owned.includes(r));
+    const canStart = ageOk && hasReq;
+    const needsQual = ageOk && !hasReq;
+    const sel = S.careers.includes(c.id);
+    const badgeHtml = !ageOk
+      ? `<span class="badge b-gray">年齢超過</span>`
+      : needsQual
+        ? `<span class="badge b-orange">要資格取得</span>`
+        : `<span class="badge b-green">選択可</span>`;
+    const reqNames = c.req.map(r => QUALS.find(q => q.id === r)?.name || r).join('、');
+    return `<div class="ccard${sel?' sel':''}${!canStart?' disabled':''}"
+                 onclick="${canStart?`togCareer('${c.id}',this)`:''}"
+            >
+      <div class="cico">${c.icon}</div>
+      <div class="cname">${c.name}</div>
+      <div class="cmeta">
+        <div class="csal">平均年収 ${c.start}万〜</div>
+        <div>安定性: ${c.stability}</div>
+        <div>${c.desc}</div>
+        <div style="margin-top:6px">${badgeHtml}</div>
+        ${reqNames ? `<div style="margin-top:4px;font-size:10px;color:var(--muted)">必要: ${reqNames}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function togCareer(id, el) {
+  const i = S.careers.indexOf(id);
+  if (i === -1) { S.careers.push(id); el.classList.add('sel'); }
+  else          { S.careers.splice(i,1); el.classList.remove('sel'); }
+}
+
+/* ================================================================
+   STEP 4 — Budget sliders
+================================================================ */
+function buildSliders() {
+  document.getElementById('sliders').innerHTML = SLIDERS.map(s => `
+    <div class="fg">
+      <label>${s.label}</label>
+      <input type="range" id="sl-${s.id}" min="${s.min}" max="${s.max}" value="${S[s.id]}"
+             oninput="slideChange('${s.id}',this.value)">
+      <div class="rrow">
+        <span style="font-size:12px;color:var(--muted)">${s.min}万〜${s.max}万</span>
+        <span class="rv" id="d-${s.id}">${S[s.id]}万円</span>
+      </div>
+    </div>
+  `).join('');
+  calcTotalExp();
+}
+function slideChange(id, val) {
+  S[id] = parseInt(val);
+  document.getElementById('d-' + id).textContent = val + '万円';
+  calcTotalExp();
+}
+function calcTotalExp() {
+  const t = S.food + S.rent + S.util + S.fun + S.ins;
+  document.getElementById('total-exp').textContent = t + '万円';
+}
+function readSliders() {
+  SLIDERS.forEach(s => {
+    const el = document.getElementById('sl-' + s.id);
+    if (el) S[s.id] = parseInt(el.value);
+  });
+}
+function buildRoutes() { go(5); }
+
+/* ================================================================
+   STEP 5 — Requirements
+================================================================ */
+function renderRequirements() {
+  const crs = CAREERS.filter(c => S.careers.includes(c.id));
+  if (!crs.length) { document.getElementById('req-section').innerHTML = ''; return; }
+
+  const items = [];
+  const hasFullTime = ['full','contract'].includes(S.emp) || S.fullExp > 0;
+  const hasManners  = ['full','contract','freelance'].includes(S.emp);
+
+  crs.forEach(c => {
+    c.req.forEach(rid => {
+      const q = QUALS.find(q => q.id === rid);
+      if (!q) return;
+      items.push({ label: q.name, done: S.owned.includes(rid), tag: c.name });
+    });
+    if (c.id !== 'kaigo' && c.id !== 'inv') {
+      items.push({ label: `${c.name}の実務経験・業界知識`, done: S.fullExp >= 1, tag: c.name });
+    }
+  });
+  items.push({ label: '社会人マナー（報連相・ビジネスメール）', done: hasManners });
+  if (crs.some(c => c.id !== 'civil')) {
+    items.push({ label: '正社員または安定した就業経験', done: hasFullTime });
+  }
+
+  const unique = [...new Map(items.map(i => [i.label, i])).values()];
+  document.getElementById('req-section').innerHTML = `
+    <div class="card">
+      <div class="ctitle">📌 目標達成に必要なこと</div>
+      <ul class="reqlist">
+        ${unique.map(r => `
+          <li class="req ${r.done?'done':'todo'}">
+            <span class="ico">${r.done?'✅':'⏳'}</span>
+            <div>
+              <div>${r.label}</div>
+              ${r.tag ? `<div style="font-size:11px;margin-top:2px;opacity:.7">${r.tag} に必要</div>` : ''}
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    </div>`;
+}
+
+/* ================================================================
+   FINANCE MATH
+================================================================ */
+function monthlyExp() { return S.food + S.rent + S.util + S.fun + S.ins; }
+function annualExp()  { return monthlyExp() * 12; }
+
+function primaryCareer() {
+  const list = CAREERS.filter(c => S.careers.includes(c.id));
+  return list[0] || { start:300, peak:500, midYrs:5 };
+}
+
+function projectAssetsAt(targetAge) {
+  if (targetAge <= S.age) return S.savings;
+  const c = primaryCareer();
+  const aExp = annualExp();
+  let assets = S.savings;
+  const yrs = targetAge - S.age;
+  for (let y = 1; y <= yrs; y++) {
+    const prog = Math.min(y / (c.midYrs * 2.5), 1);
+    const sal = c.start * 0.85 + (c.peak - c.start * 0.85) * prog;
+    const surplus = Math.max(0, sal - aExp);
+    assets = assets * 1.03 + surplus * 0.3;
+  }
+  return Math.round(assets);
+}
+
+function simulate(routeCfg, startAge, startAssets) {
+  const age0 = startAge || S.age;
+  const assets0 = (startAssets !== undefined) ? startAssets : S.savings;
+  const c = primaryCareer();
+  const aExp = annualExp();
+  const tl = [];
+  let assets = assets0;
+
+  const ageStops = [];
+  for (let a = age0; a <= 70; a += 5) ageStops.push(a);
+
+  ageStops.forEach((curAge, i) => {
+    const yearsIn = curAge - age0;
+    const prog = Math.min(yearsIn / (c.midYrs * 2.5), 1);
+    const sal = Math.round((c.start + (c.peak - c.start) * prog) * routeCfg.inc);
+    const surplus = Math.max(0, sal - aExp);
+    const newSavings = surplus * routeCfg.sv;
+
+    if (i > 0) {
+      assets = assets * Math.pow(1 + routeCfg.ret, 5) + newSavings * 5;
+    }
+    assets = Math.max(0, assets);
+
+    tl.push({ age: curAge, sal, assets: Math.round(assets) });
+  });
+  return tl;
+}
+
+function fmt(v) {
+  if (v >= 10000) return (v / 10000).toFixed(1) + '億円';
+  if (v >= 100)   return Math.round(v / 100) * 100 + '万円';
+  return v + '万円';
+}
+
+const AGE_MILESTONES = {
+  20:'キャリアスタート・土台作り期',
+  25:'第2ステージ・スキル蓄積期',
+  30:'30代前半・キャリア方向性確立',
+  35:'専門性が市場価値を高める時期',
+  40:'中堅・管理職またはスペシャリスト',
+  45:'収入ピーク期・資産形成を加速',
+  50:'老後準備・投資収益が育ち始める',
+  55:'ラストスパート・資産活用も視野',
+  60:'定年前後・年金・退職金を計算',
+  65:'年金受給・セカンドライフへ',
+  70:'完全リタイア・資産活用フェーズ',
+};
+function milestone(age) { return AGE_MILESTONES[age] || `${age}歳時点`; }
+
+/* ================================================================
+   STEP 5 — Render routes
+================================================================ */
+function renderRoutes() {
+  const area = document.getElementById('routes-area');
+  area.innerHTML = '<div class="rcards">' +
+    ROUTE_TYPES.map(rt => routeCardHtml(rt, S.age, S.savings)).join('') +
+    '</div>';
+}
+
+function routeCardHtml(rt, fromAge, startAssets) {
+  const tl = simulate(rt, fromAge, startAssets);
+  const at = age => tl.find(t => t.age >= age)?.assets ?? tl[tl.length - 1].assets;
+
+  const dotCols = { stable:'#3b5bdb', invest:'#2f9e44', enjoy:'#e67700', free:'#7048e8' };
+  const dc = dotCols[rt.key];
+
+  return `<div class="rcard">
+    <div class="rhead ${rt.cls}">
+      <h3>${rt.emoji} ${rt.label}</h3>
+      <p>${rt.desc}</p>
+    </div>
+    <div class="rbody">
+      <div class="rstats">
+        <div class="rstat"><div class="rstat-l">40歳時の資産</div><div class="rstat-v">${fmt(at(40))}</div></div>
+        <div class="rstat"><div class="rstat-l">50歳時の資産</div><div class="rstat-v">${fmt(at(50))}</div></div>
+        <div class="rstat"><div class="rstat-l">65歳時の資産</div><div class="rstat-v">${fmt(at(65))}</div></div>
+      </div>
+      <div class="tl">
+        ${tl.map(t => `
+          <div class="tli">
+            <div class="tldot" style="color:${dc}"></div>
+            <div class="tl-age" style="color:${dc}">📍 ${t.age}歳</div>
+            <div class="tl-txt">${milestone(t.age)}</div>
+            <div class="tl-money" style="color:var(--g)">年収 ${t.sal}万円 ／ 資産 ${fmt(t.assets)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   STEP 5 — Recalc tabs
+================================================================ */
+function renderRecalcTabs() {
+  const tabs = document.getElementById('rtabs');
+  const ages = [];
+  for (let a = Math.ceil((S.age + 1) / 5) * 5; a <= 60; a += 5) ages.push(a);
+
+  tabs.innerHTML = ages.map((a, i) =>
+    `<div class="tab${i===0?' on':''}" onclick="showRecalc(${a},this)">${a}歳からやり直し</div>`
+  ).join('');
+
+  if (ages.length) showRecalc(ages[0]);
+}
+
+function showRecalc(fromAge, el) {
+  if (el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    el.classList.add('on');
+  }
+  const startAssets = projectAssetsAt(fromAge);
+  document.getElementById('rcalc-area').innerHTML = `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      ${fromAge}歳時点の推定資産 <strong>${fmt(startAssets)}</strong> からスタートした場合の試算
+    </p>
+    <div class="rcards">
+      ${['stable','invest'].map(key => {
+        const rt = ROUTE_TYPES.find(r => r.key === key);
+        return routeCardHtml(rt, fromAge, startAssets);
+      }).join('')}
+    </div>`;
+}
+
+/* ================================================================
+   BOOT
+================================================================ */
+renderProg();
+</script>
+</body>
+</html>

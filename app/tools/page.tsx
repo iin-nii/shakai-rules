@@ -24,6 +24,15 @@ const tools = [
     bgColor: "#0a1f15",
     tag: "経済・データ",
   },
+  {
+    href: "/tools/life-planner",
+    icon: "🗺️",
+    title: "人生設計シミュレーター",
+    description: "年齢・資格・目標を入力すると、安定・投資・自由など複数の人生ルートと資産推移を描き出す。",
+    color: "#a78bfa",
+    bgColor: "#1a0f2e",
+    tag: "キャリア・人生設計",
+  },
 ];
 
 export default function ToolsPage() {
