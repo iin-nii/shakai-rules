@@ -199,6 +199,59 @@ button.act:hover { background: var(--color-background-secondary); }
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
+/* ── 円レートセクション ── */
+.fx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fx-updated {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+.fx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.fx-card {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 0.7rem 0.85rem;
+  border: 0.5px solid var(--color-border-tertiary);
+}
+.fx-pair {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fx-rate {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
+.fx-unit {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-left: 2px;
+}
+.fx-status {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
@@ -291,9 +344,25 @@ button.act:hover { background: var(--color-background-secondary); }
 
 <hr class="divider">
 
+<!-- ── 円レートセクション ── -->
+<div class="fx-header">
+  <div class="section-title" style="margin:0;">日本円 対外貨レート <span class="source-tag">月一更新・Frankfurter API</span></div>
+  <span class="fx-updated" id="fx-updated"></span>
+</div>
+<div class="fx-status" id="fx-status">
+  <span class="dot loading" id="fx-dot"></span>
+  <span id="fx-statusText">為替データ取得中…</span>
+</div>
+<div class="fx-grid" id="fx-grid"></div>
+
+<hr class="divider">
+
 <p style="font-size:12px; color:var(--color-text-tertiary);">
-  データソース: <a href="https://data.worldbank.org/" target="_blank" rel="noopener" style="color:inherit;">World Bank Open Data</a>
-  （NY.GDP.MKTP.CD / SL.UEM.TOTL.ZS / FP.CPI.TOTL.ZG）
+  データソース:
+  <a href="https://data.worldbank.org/" target="_blank" rel="noopener" style="color:inherit;">World Bank Open Data</a>
+  （GDP / 失業率 / CPI）&nbsp;／&nbsp;
+  <a href="https://www.frankfurter.app/" target="_blank" rel="noopener" style="color:inherit;">Frankfurter API</a>
+  （為替レート・月次キャッシュ）
 </p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -418,6 +487,91 @@ function calc() {
 }
 
 fetchData();
+
+// =============================================
+// 円レート（月次キャッシュ）
+// =============================================
+const FX_CACHE_KEY = 'jpy_fx_cache';
+const FX_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30日
+
+const FX_PAIRS = [
+  { code: 'USD', label: '米ドル',           flag: '🇺🇸' },
+  { code: 'EUR', label: 'ユーロ',           flag: '🇪🇺' },
+  { code: 'GBP', label: '英ポンド',         flag: '🇬🇧' },
+  { code: 'CNY', label: '中国元',           flag: '🇨🇳' },
+  { code: 'KRW', label: '韓国ウォン',       flag: '🇰🇷' },
+  { code: 'AUD', label: '豪ドル',           flag: '🇦🇺' },
+  { code: 'CAD', label: 'カナダドル',       flag: '🇨🇦' },
+  { code: 'CHF', label: 'スイスフラン',     flag: '🇨🇭' },
+  { code: 'SGD', label: 'シンガポールドル', flag: '🇸🇬' },
+  { code: 'INR', label: 'インドルピー',     flag: '🇮🇳' },
+];
+
+function setFxStatus(state, text) {
+  document.getElementById('fx-dot').className = 'dot ' + state;
+  document.getElementById('fx-statusText').textContent = text;
+}
+
+function renderFxGrid(rates, dateStr) {
+  const grid = document.getElementById('fx-grid');
+  grid.innerHTML = '';
+  for (const p of FX_PAIRS) {
+    const fxRate = rates[p.code]; // 1 JPY = fxRate 外貨
+    if (!fxRate) continue;
+    const jpyPer1 = (1 / fxRate); // 1 外貨 = ? 円
+    // 表示桁数を通貨に応じて調整
+    const decimals = p.code === 'KRW' || p.code === 'INR' ? 2 : (jpyPer1 >= 10 ? 2 : 4);
+    const displayRate = jpyPer1.toFixed(decimals);
+    const card = document.createElement('div');
+    card.className = 'fx-card';
+    card.innerHTML = `
+      <div class="fx-pair">${p.flag} ${p.code} <span style="color:var(--color-text-secondary)">${p.label}</span></div>
+      <div class="fx-rate">${Number(displayRate).toLocaleString('ja-JP')}<span class="fx-unit">円</span></div>
+    `;
+    grid.appendChild(card);
+  }
+  // 更新日表示
+  const d = new Date(dateStr);
+  const label = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 時点`;
+  document.getElementById('fx-updated').textContent = label;
+}
+
+async function fetchFX(forceRefresh = false) {
+  // キャッシュ確認
+  if (!forceRefresh) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(FX_CACHE_KEY) || 'null');
+      if (cached && (Date.now() - cached.fetchedAt) < FX_TTL_MS) {
+        renderFxGrid(cached.rates, cached.date);
+        const daysLeft = Math.ceil((FX_TTL_MS - (Date.now() - cached.fetchedAt)) / 86400000);
+        setFxStatus('ok', `キャッシュ使用中（次回更新まで約${daysLeft}日）`);
+        return;
+      }
+    } catch(_) {}
+  }
+
+  setFxStatus('loading', '為替レート取得中… Frankfurter API');
+  const codes = FX_PAIRS.map(p => p.code).join(',');
+  try {
+    const res  = await fetch(`https://api.frankfurter.app/latest?from=JPY&to=${codes}`);
+    const json = await res.json();
+    const cache = { rates: json.rates, date: json.date, fetchedAt: Date.now() };
+    localStorage.setItem(FX_CACHE_KEY, JSON.stringify(cache));
+    renderFxGrid(json.rates, json.date);
+    setFxStatus('ok', `取得完了（${json.date}）— Frankfurter API`);
+  } catch(e) {
+    setFxStatus('err', '為替取得失敗。キャッシュまたは手動確認してください。');
+  }
+}
+
+// 「再取得」ボタンも為替を強制リフレッシュするよう上書き
+const _origFetchData = fetchData;
+fetchData = async function() {
+  await _origFetchData();
+  await fetchFX(true); // 経済データ再取得時は為替も強制更新
+};
+
+fetchFX(); // 初回はキャッシュ優先
 </script>
 </body>
 </html>
