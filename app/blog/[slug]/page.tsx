@@ -59,7 +59,7 @@ function renderContent(content: string, color: string) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    if (line.startsWith("| ")) {
+    if (line.startsWith("|")) {
       inTable = true;
       tableRows.push(line.split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1));
       continue;
@@ -108,6 +108,14 @@ function renderContent(content: string, color: string) {
         <div key={key++} className="rounded-xl px-5 py-4 my-6 text-base font-bold leading-relaxed"
           style={{ backgroundColor: color + "18", borderLeft: `4px solid ${color}`, color: "#f1f5f9" }}>
           {line.slice(2, -2)}
+        </div>
+      );
+    } else if (line.startsWith("[img:")) {
+      const src = line.slice(5, -1);
+      elements.push(
+        <div key={key++} className="my-6 flex justify-center">
+          <img src={src} alt="" className="max-w-full rounded-xl"
+            style={{ border: "1px solid #334155", background: "#0f172a" }} />
         </div>
       );
     } else if (line.trim() === "") {
