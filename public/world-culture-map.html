@@ -2655,7 +2655,32 @@ function renderCards(info, tab){
             <br><span style="font-size:0.82em;color:var(--tx2)">${diff}</span>
             <br><span style="font-size:0.79em;color:var(--tx3)">${w.note}</span>
           </div>
-        </div>`;
+        </div>` +
+        (() => {
+          const d = DISP_DB[currentCountryId];
+          if (!d) return '';
+          const monthly = Math.round(d.annualJPY / 12);
+          const jpD = DISP_DB[392];
+          const vsJp = !jpD ? '' : d.annualJPY > jpD.annualJPY
+            ? `<span style="color:#4ade80;font-size:0.82em"> ▲ 日本比 +${Math.round((d.annualJPY/jpD.annualJPY-1)*100)}%</span>`
+            : d.annualJPY < jpD.annualJPY
+            ? `<span style="color:#f87171;font-size:0.82em"> ▼ 日本比 −${Math.round((1-d.annualJPY/jpD.annualJPY)*100)}%</span>`
+            : '';
+          return `<div class="card" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.22)">
+            <div class="card-title">💰 可処分所得（平均）</div>
+            <div class="card-body">
+              <span style="font-size:0.82em;color:var(--tx3)">年間（円換算）</span><br>
+              <span style="font-size:1.3em;font-weight:600;color:#4ade80">約${d.annualJPY.toLocaleString()}円</span>${vsJp}
+              <div style="font-size:0.84em;color:var(--tx2);margin-top:4px">月換算 約${monthly.toLocaleString()}円</div>
+              <div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd)">
+                <span style="font-size:0.82em;color:var(--tx3)">一般的な住居費の目安</span><br>
+                <span style="font-size:1.1em;font-weight:600;color:var(--tx)">可処分所得の約${d.rentRatio}%</span>
+                <span style="font-size:0.82em;color:var(--tx3)">（月収の${Math.round(monthly*d.rentRatio/100).toLocaleString()}円相当）</span>
+              </div>
+              <div style="font-size:0.78em;color:var(--tx3);margin-top:5px">${d.src}</div>
+            </div>
+          </div>`;
+        })();
 
     // ══════════════════════════════════
     // 📊 国単位ビュー
@@ -3382,6 +3407,41 @@ function _drawPrefMap(topo){
     resizer.classList.remove('dragging');
   });
 })();
+
+// ── 可処分所得データベース ─────────────────────────────────────────────────
+// annualJPY: 年間可処分所得（円換算・1人あたり）
+// rentRatio: 住居費が可処分所得に占める割合（%）
+// src: データソース注記
+const DISP_DB = {
+  392: { annualJPY: 3_800_000, rentRatio: 22, src: 'OECD Better Life Index 2024 / 総務省家計調査' },
+  840: { annualJPY: 8_700_000, rentRatio: 28, src: 'BLS / U.S. Census Bureau 2024（$58,000 × 150円）' },
+  156: { annualJPY: 2_800_000, rentRatio: 20, src: '中国国家統計局 2024 都市部平均（¥23,000元 × 20円）' },
+  410: { annualJPY: 4_200_000, rentRatio: 22, src: 'OECD 2024 / 統計庁（4,200万ウォン × 0.11円）' },
+  356: { annualJPY:   900_000, rentRatio: 25, src: 'NSSO 都市中間所得層の概算。地域・職種差が極めて大きい' },
+  250: { annualJPY: 5_100_000, rentRatio: 25, src: 'INSEE / OECD 2024（€32,000 × 160円）' },
+  276: { annualJPY: 5_800_000, rentRatio: 27, src: 'Destatis / OECD 2024（€36,000 × 160円）' },
+  826: { annualJPY: 7_200_000, rentRatio: 30, src: 'ONS 2024（£38,000 × 190円）' },
+  682: { annualJPY: 4_800_000, rentRatio: 15, src: 'サウジ労働統計局（自国民対象。住居補助が充実）' },
+  764: { annualJPY: 1_000_000, rentRatio: 20, src: 'タイ国家統計局 2024（THB250,000 × 4円）' },
+  702: { annualJPY: 7_700_000, rentRatio: 24, src: 'MOM シンガポール 2024（SGD70,000 × 110円）' },
+   76: { annualJPY: 1_500_000, rentRatio: 25, src: 'IBGE ブラジル 2024（BRL50,000 × 30円）' },
+   36: { annualJPY: 6_500_000, rentRatio: 26, src: 'ABS / OECD 2024（AUD65,000 × 100円）' },
+  380: { annualJPY: 3_700_000, rentRatio: 24, src: 'Istat / OECD 2024（€23,000 × 160円）' },
+  724: { annualJPY: 3_200_000, rentRatio: 24, src: 'INE / OECD 2024（€20,000 × 160円）' },
+  528: { annualJPY: 6_100_000, rentRatio: 25, src: 'CBS / OECD 2024（€38,000 × 160円）' },
+  752: { annualJPY: 5_600_000, rentRatio: 24, src: 'SCB / OECD 2024（€35,000相当 × 160円）' },
+  578: { annualJPY: 9_600_000, rentRatio: 22, src: 'SSB / OECD 2024（€60,000 × 160円）。石油基金が高福祉を支える' },
+  124: { annualJPY: 6_400_000, rentRatio: 27, src: 'Statistics Canada / OECD 2024（CAD58,000 × 110円）' },
+  484: { annualJPY: 1_400_000, rentRatio: 22, src: 'INEGI メキシコ 2024（MXN150,000 × 9円）' },
+  643: { annualJPY: 1_400_000, rentRatio: 20, src: 'Rosstat 2024（RUB800,000 × 1.8円）。制裁影響で変動大' },
+  792: { annualJPY: 1_500_000, rentRatio: 25, src: 'TurkStat 2024（TRY300,000 × 5円）。インフレにより実質値は変動大' },
+  704: { annualJPY:   600_000, rentRatio: 20, src: 'ベトナム統計総局 2024（VND100M × 0.006円）' },
+  360: { annualJPY:   680_000, rentRatio: 20, src: 'BPS インドネシア 2024（IDR80M × 0.0085円）' },
+  458: { annualJPY: 2_000_000, rentRatio: 22, src: 'DOSM マレーシア 2024（MYR60,000 × 33円）' },
+  608: { annualJPY:   780_000, rentRatio: 20, src: 'PSA フィリピン 2024（PHP300,000 × 2.6円）' },
+  710: { annualJPY: 1_600_000, rentRatio: 25, src: 'StatsSA 2024（ZAR200,000 × 8円）' },
+   32: { annualJPY: 1_500_000, rentRatio: 30, src: 'INDEC 2024。ハイパーインフレにより実質値は月単位で変動' },
+};
 
 // ── 為替レート（月次キャッシュ）────────────────────────────────────────────
 const CURRENCY_MAP = {
