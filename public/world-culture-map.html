@@ -2677,7 +2677,8 @@ function renderCards(info, tab){
                 <span style="font-size:1.1em;font-weight:600;color:var(--tx)">可処分所得の約${d.rentRatio}%</span>
                 <span style="font-size:0.82em;color:var(--tx3)">（月収の${Math.round(monthly*d.rentRatio/100).toLocaleString()}円相当）</span>
               </div>
-              <div style="font-size:0.78em;color:var(--tx3);margin-top:5px">${d.src}</div>
+              ${fxRateInJPY(currentCountryId)}
+              <div style="font-size:0.75em;color:var(--tx3);margin-top:6px">${d.src}</div>
             </div>
           </div>`;
         })();
@@ -3408,39 +3409,51 @@ function _drawPrefMap(topo){
   });
 })();
 
+// ══════════════════════════════════════════════════════════════════════════════
+// WCM_CONFIG  ─ 動作設定（ここを変えれば挙動が変わる）
+// ══════════════════════════════════════════════════════════════════════════════
+const WCM_CONFIG = {
+  // FX為替レート
+  fxCacheKey: 'wcm_jpy_fx_v2',              // localStorageキー（変更でキャッシュクリア）
+  fxTtlMs:    30 * 24 * 60 * 60 * 1000,     // 更新間隔: 30日（ミリ秒）
+  fxApiBase:  'https://api.frankfurter.app/latest',
+};
+
 // ── 可処分所得データベース ─────────────────────────────────────────────────
-// annualJPY: 年間可処分所得（円換算・1人あたり）
-// rentRatio: 住居費が可処分所得に占める割合（%）
-// src: データソース注記
+// 【算出方法】全労働者平均額面（正規＋非正規含む）から
+//   社会保険料（健康保険・年金・雇用保険相当）＋ 所得税 ＋ 住民税相当 を控除
+// annualJPY : 年間可処分所得（円換算・1人あたり）
+// rentRatio : 住居費÷可処分所得の目安（%）
+// src       : 参照元・算出根拠
 const DISP_DB = {
-  392: { annualJPY: 3_800_000, rentRatio: 22, src: 'OECD Better Life Index 2024 / 総務省家計調査' },
-  840: { annualJPY: 8_700_000, rentRatio: 28, src: 'BLS / U.S. Census Bureau 2024（$58,000 × 150円）' },
-  156: { annualJPY: 2_800_000, rentRatio: 20, src: '中国国家統計局 2024 都市部平均（¥23,000元 × 20円）' },
-  410: { annualJPY: 4_200_000, rentRatio: 22, src: 'OECD 2024 / 統計庁（4,200万ウォン × 0.11円）' },
-  356: { annualJPY:   900_000, rentRatio: 25, src: 'NSSO 都市中間所得層の概算。地域・職種差が極めて大きい' },
-  250: { annualJPY: 5_100_000, rentRatio: 25, src: 'INSEE / OECD 2024（€32,000 × 160円）' },
-  276: { annualJPY: 5_800_000, rentRatio: 27, src: 'Destatis / OECD 2024（€36,000 × 160円）' },
-  826: { annualJPY: 7_200_000, rentRatio: 30, src: 'ONS 2024（£38,000 × 190円）' },
-  682: { annualJPY: 4_800_000, rentRatio: 15, src: 'サウジ労働統計局（自国民対象。住居補助が充実）' },
-  764: { annualJPY: 1_000_000, rentRatio: 20, src: 'タイ国家統計局 2024（THB250,000 × 4円）' },
-  702: { annualJPY: 7_700_000, rentRatio: 24, src: 'MOM シンガポール 2024（SGD70,000 × 110円）' },
-   76: { annualJPY: 1_500_000, rentRatio: 25, src: 'IBGE ブラジル 2024（BRL50,000 × 30円）' },
-   36: { annualJPY: 6_500_000, rentRatio: 26, src: 'ABS / OECD 2024（AUD65,000 × 100円）' },
-  380: { annualJPY: 3_700_000, rentRatio: 24, src: 'Istat / OECD 2024（€23,000 × 160円）' },
-  724: { annualJPY: 3_200_000, rentRatio: 24, src: 'INE / OECD 2024（€20,000 × 160円）' },
-  528: { annualJPY: 6_100_000, rentRatio: 25, src: 'CBS / OECD 2024（€38,000 × 160円）' },
-  752: { annualJPY: 5_600_000, rentRatio: 24, src: 'SCB / OECD 2024（€35,000相当 × 160円）' },
-  578: { annualJPY: 9_600_000, rentRatio: 22, src: 'SSB / OECD 2024（€60,000 × 160円）。石油基金が高福祉を支える' },
-  124: { annualJPY: 6_400_000, rentRatio: 27, src: 'Statistics Canada / OECD 2024（CAD58,000 × 110円）' },
-  484: { annualJPY: 1_400_000, rentRatio: 22, src: 'INEGI メキシコ 2024（MXN150,000 × 9円）' },
-  643: { annualJPY: 1_400_000, rentRatio: 20, src: 'Rosstat 2024（RUB800,000 × 1.8円）。制裁影響で変動大' },
-  792: { annualJPY: 1_500_000, rentRatio: 25, src: 'TurkStat 2024（TRY300,000 × 5円）。インフレにより実質値は変動大' },
-  704: { annualJPY:   600_000, rentRatio: 20, src: 'ベトナム統計総局 2024（VND100M × 0.006円）' },
-  360: { annualJPY:   680_000, rentRatio: 20, src: 'BPS インドネシア 2024（IDR80M × 0.0085円）' },
-  458: { annualJPY: 2_000_000, rentRatio: 22, src: 'DOSM マレーシア 2024（MYR60,000 × 33円）' },
-  608: { annualJPY:   780_000, rentRatio: 20, src: 'PSA フィリピン 2024（PHP300,000 × 2.6円）' },
-  710: { annualJPY: 1_600_000, rentRatio: 25, src: 'StatsSA 2024（ZAR200,000 × 8円）' },
-   32: { annualJPY: 1_500_000, rentRatio: 30, src: 'INDEC 2024。ハイパーインフレにより実質値は月単位で変動' },
+  392: { annualJPY: 2_400_000, rentRatio: 22, src: '厚労省賃金構造基本統計調査2023 全労働者平均約310万円 × 控除率約28%（社保15%+所得税5%+住民税8%）' },
+  840: { annualJPY: 6_000_000, rentRatio: 28, src: 'BLS 2024 全労働者平均$52,000 × 控除率約23%（連邦・州税+社保）≒$40,000 × 150円' },
+  156: { annualJPY:   640_000, rentRatio: 20, src: '中国国家統計局2024 全国平均年収36,000元 × 控除率約11%（社保） × 20円' },
+  410: { annualJPY: 3_000_000, rentRatio: 22, src: '韓国統計庁2024 全労働者平均3,500万ウォン × 控除率約22% × 0.11円' },
+  356: { annualJPY:   760_000, rentRatio: 25, src: 'NSSO 都市部全労働者平均500,000INR × 控除率約13% × 1.75円。農村部はさらに低い' },
+  250: { annualJPY: 3_700_000, rentRatio: 25, src: 'INSEE2024 全労働者平均€32,000 × 控除率約28%（社保+税） × 160円' },
+  276: { annualJPY: 4_150_000, rentRatio: 27, src: 'Destatis2024 全労働者平均€36,000 × 控除率約28% × 160円' },
+  826: { annualJPY: 4_800_000, rentRatio: 30, src: 'ONS2024 全労働者平均£34,000 × 控除率約25%（NI+所得税） × 190円' },
+  682: { annualJPY: 2_950_000, rentRatio: 15, src: 'サウジ労働統計局 自国民平均SAR80,000 × 控除率約8%（低税率） × 40円。住居補助が充実' },
+  764: { annualJPY:   840_000, rentRatio: 20, src: 'タイ国家統計局2024 全労働者平均THB240,000 × 控除率約12% × 4円' },
+  702: { annualJPY: 5_300_000, rentRatio: 24, src: 'MOM2024 全労働者平均SGD60,000 × 控除率約20%（CPF等） × 110円' },
+   76: { annualJPY: 1_060_000, rentRatio: 25, src: 'IBGE2024 全労働者平均BRL44,000 × 控除率約20% × 30円' },
+   36: { annualJPY: 5_200_000, rentRatio: 26, src: 'ABS/OECD2024 全労働者平均AUD68,000 × 控除率約23% × 100円' },
+  380: { annualJPY: 2_760_000, rentRatio: 24, src: 'Istat2024 全労働者平均€24,000 × 控除率約28% × 160円' },
+  724: { annualJPY: 2_680_000, rentRatio: 24, src: 'INE2024 全労働者平均€22,000 × 控除率約24% × 160円' },
+  528: { annualJPY: 4_000_000, rentRatio: 25, src: 'CBS2024 全労働者平均€36,000 × 控除率約30%（高社保率） × 160円' },
+  752: { annualJPY: 3_920_000, rentRatio: 24, src: 'SCB2024 全労働者平均SEK相当€36,000 × 控除率約32%（高累進税） × 160円' },
+  578: { annualJPY: 6_100_000, rentRatio: 22, src: 'SSB2024 全労働者平均€53,000 × 控除率約28% × 160円。石油基金による高福祉' },
+  124: { annualJPY: 4_570_000, rentRatio: 27, src: 'StatsCan2024 全労働者平均CAD54,000 × 控除率約23% × 110円' },
+  484: { annualJPY: 1_100_000, rentRatio: 22, src: 'INEGI2024 全労働者平均MXN136,000 × 控除率約10% × 9円。非公式労働者が多く実態は下振れ' },
+  643: { annualJPY: 1_100_000, rentRatio: 20, src: 'Rosstat2024 全労働者平均RUB700,000 × 控除率約13% × 1.8円。西側制裁で実質値変動大' },
+  792: { annualJPY: 1_200_000, rentRatio: 25, src: 'TurkStat2024 全労働者平均TRY280,000 × 控除率約15% × 5円。高インフレで実質値は急変動' },
+  704: { annualJPY:   480_000, rentRatio: 20, src: 'ベトナム統計総局2024 全労働者平均VND88,000,000 × 控除率約10% × 0.006円' },
+  360: { annualJPY:   500_000, rentRatio: 20, src: 'BPS2024 全労働者平均IDR65,000,000 × 控除率約12% × 0.0085円' },
+  458: { annualJPY: 1_490_000, rentRatio: 22, src: 'DOSM2024 全労働者平均MYR52,000 × 控除率約13% × 33円' },
+  608: { annualJPY:   600_000, rentRatio: 20, src: 'PSA2024 全労働者平均PHP260,000 × 控除率約12% × 2.6円' },
+  710: { annualJPY: 1_220_000, rentRatio: 25, src: 'StatsSA2024 全労働者平均ZAR180,000 × 控除率約15% × 8円。失業率32%で実態は二極化' },
+   32: { annualJPY: 1_350_000, rentRatio: 30, src: 'INDEC2024 USD9,000相当 × 150円。ハイパーインフレで名目値は月単位で変動' },
 };
 
 // ── 為替レート（月次キャッシュ）────────────────────────────────────────────
@@ -3475,51 +3488,66 @@ const CURRENCY_MAP = {
 };
 
 let FX_RATES = {}; // ISO code → (1 JPY = X外貨)
-
-const WCM_FX_KEY = 'wcm_jpy_fx_v1';
-const WCM_FX_TTL = 30 * 24 * 60 * 60 * 1000; // 30日
+let FX_CACHED_AT = 0; // キャッシュ取得タイムスタンプ
 
 async function loadFxRates(force = false) {
   if (!force) {
     try {
-      const cached = JSON.parse(localStorage.getItem(WCM_FX_KEY) || 'null');
-      if (cached && Date.now() - cached.ts < WCM_FX_TTL) {
+      const cached = JSON.parse(localStorage.getItem(WCM_CONFIG.fxCacheKey) || 'null');
+      if (cached && Date.now() - cached.ts < WCM_CONFIG.fxTtlMs) {
         FX_RATES = cached.rates;
+        FX_CACHED_AT = cached.ts;
         return;
       }
     } catch(e) {}
   }
   try {
     const codes = [...new Set(Object.values(CURRENCY_MAP).map(c => c.code))].join(',');
-    const res = await fetch(`https://api.frankfurter.app/latest?from=JPY&to=${codes}`);
+    const res = await fetch(`${WCM_CONFIG.fxApiBase}?from=JPY&to=${codes}`);
     if (!res.ok) throw new Error('API ' + res.status);
     const data = await res.json();
     FX_RATES = data.rates || {};
-    localStorage.setItem(WCM_FX_KEY, JSON.stringify({ts: Date.now(), rates: FX_RATES}));
+    FX_CACHED_AT = Date.now();
+    localStorage.setItem(WCM_CONFIG.fxCacheKey, JSON.stringify({ts: FX_CACHED_AT, rates: FX_RATES}));
   } catch(e) {
     console.warn('[FX] 取得失敗:', e);
   }
 }
 
+// 時給比較カード用: 100円 = X [code]
 function fxLine(countryId) {
   const cm = CURRENCY_MAP[countryId];
-  if (!cm) return ''; // 日本(392)など未登録
+  if (!cm) return '';
   const rate = FX_RATES[cm.code];
   if (rate === undefined) {
-    return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd);font-size:0.79em;color:var(--tx3)">
-      💱 為替レート取得中…
-    </div>`;
+    return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd);font-size:0.79em;color:var(--tx3)">💱 為替レート取得中…</div>`;
   }
-  const val = rate * 100; // 100円 = val 外貨
-  let fmt;
-  if (val >= 1000)      fmt = Math.round(val).toLocaleString();
-  else if (val >= 100)  fmt = Math.round(val).toLocaleString();
-  else if (val >= 10)   fmt = val.toFixed(1);
-  else if (val >= 1)    fmt = val.toFixed(2);
-  else                  fmt = val.toFixed(3);
+  const val = rate * 100;
+  let fmt = val >= 100 ? Math.round(val).toLocaleString() : val >= 10 ? val.toFixed(1) : val >= 1 ? val.toFixed(2) : val.toFixed(3);
   return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd);font-size:0.82em;color:var(--tx2)">
     ${cm.flag} 100円＝<span style="font-weight:600;color:var(--tx)">${fmt} ${cm.code}</span>
     <span style="font-size:0.86em;color:var(--tx3)"> （月次更新）</span>
+  </div>`;
+}
+
+// 可処分所得カード用: 1 [code] = X 円 ＋ キャッシュ日付
+function fxRateInJPY(countryId) {
+  const cm = CURRENCY_MAP[countryId];
+  if (!cm) return '';
+  const rate = FX_RATES[cm.code]; // 1 JPY = rate [code]
+  if (!rate) return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd);font-size:0.79em;color:var(--tx3)">💱 為替レート取得中…</div>`;
+  const perUnit = 1 / rate; // 1 [code] = perUnit 円
+  const jpy = perUnit >= 100 ? Math.round(perUnit).toLocaleString()
+            : perUnit >= 10  ? perUnit.toFixed(1)
+            : perUnit >= 1   ? perUnit.toFixed(2)
+            :                  perUnit.toFixed(4);
+  const updDate = FX_CACHED_AT ? new Date(FX_CACHED_AT).toLocaleDateString('ja-JP', {year:'numeric',month:'numeric',day:'numeric'}) : '—';
+  const nextDate = FX_CACHED_AT ? new Date(FX_CACHED_AT + WCM_CONFIG.fxTtlMs).toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'}) : '—';
+  return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd)">
+    <span style="font-size:0.82em;color:var(--tx3)">💱 対円レート（月次更新）</span><br>
+    <span style="font-size:1.05em;font-weight:600;color:var(--tx)">1 ${cm.code} ＝ ${jpy} 円</span>
+    <span style="font-size:0.78em;color:var(--tx3);margin-left:4px">${cm.flag}</span>
+    <div style="font-size:0.75em;color:var(--tx3);margin-top:2px">取得: ${updDate}　次回: ${nextDate}以降</div>
   </div>`;
 }
 
