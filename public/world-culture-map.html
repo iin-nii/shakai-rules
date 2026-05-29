@@ -3199,6 +3199,7 @@ mapEl.addEventListener('touchend', ()=>{
 },{passive:true});
 
 // ── ホイールズーム（カーソル位置を中心に） ────────────────────────────────
+// capture:true → キャプチャフェーズで捕捉（D3 country パスのバブリング遮断を回避）
 mapEl.addEventListener('wheel', e=>{
   e.preventDefault();
   stopInertia();
@@ -3207,7 +3208,7 @@ mapEl.addEventListener('wheel', e=>{
   const my     = e.clientY - rect.top;
   const factor = e.deltaY < 0 ? 1.15 : 0.87;
   zoomAt(mx, my, factor);
-},{passive:false});
+},{passive:false, capture:true});
 
 // ── 共通ズーム関数 ────────────────────────────────────────────────────────
 function zoomAt(cx, cy, factor){
