@@ -2161,6 +2161,153 @@ const WORK_DB = {
   },
 };
 
+// ── 各国現地通貨建て賃金データ（最低賃金・平均時給・バイト平均） ──────────────
+// cur: ISO通貨コード  sym: 表示記号
+// min/avg/part: { v: 値, u: 'h'=時給/'m'=月給/'d'=日給, n: 注記 }
+// v: null → データなし/制度なし
+const WAGE_LOCAL_DB = {
+  392:{ cur:'JPY', sym:'¥',
+    min:{v:1121,  u:'h', n:'全国加重平均・厚生労働省2024年10月改定'},
+    avg:{v:2850,  u:'h', n:'全産業平均時給・厚生労働省2024年'},
+    part:{v:1150, u:'h', n:'パート・アルバイト求人平均（2024年）'},
+  },
+  840:{ cur:'USD', sym:'$',
+    min:{v:7.25,  u:'h', n:'連邦最低賃金（州独自設定可）・2024年'},
+    avg:{v:35.0,  u:'h', n:'全産業平均時給・BLS 2024年'},
+    part:{v:18.5, u:'h', n:'パートタイム平均推計・2024年'},
+  },
+  156:{ cur:'CNY', sym:'¥',
+    min:{v:24.0,  u:'h', n:'上海市時間最低賃金（最高水準）・2024年'},
+    avg:{v:53.0,  u:'h', n:'都市部平均（9,000元/月÷170h）・2024年'},
+    part:{v:28.0, u:'h', n:'都市部アルバイト平均推計・2024年'},
+  },
+  410:{ cur:'KRW', sym:'₩',
+    min:{v:9860,   u:'h', n:'全国法定最低賃金・2024年'},
+    avg:{v:24000,  u:'h', n:'全産業平均推計・2024年'},
+    part:{v:10200, u:'h', n:'アルバイト・最低賃金近辺・2024年'},
+  },
+  356:{ cur:'INR', sym:'₹',
+    min:{v:178,  u:'h', n:'中央政府最低賃金1,424₹/日÷8h・2024年'},
+    avg:{v:262,  u:'h', n:'都市部平均推計（年収55万₹÷2100h）・2024年'},
+    part:{v:110, u:'h', n:'非正規・日雇い推計（都市部）・2024年'},
+  },
+  250:{ cur:'EUR', sym:'€',
+    min:{v:11.65, u:'h', n:'SMIC（法定最低賃金）・2024年'},
+    avg:{v:25.1,  u:'h', n:'全産業平均（38,000€/年÷1,511h）・2024年'},
+    part:{v:11.65, u:'h', n:'SMIC・パートにも全額適用'},
+  },
+  276:{ cur:'EUR', sym:'€',
+    min:{v:12.41, u:'h', n:'法定最低賃金・2024年'},
+    avg:{v:32.8,  u:'h', n:'全産業平均（44,000€/年÷1,341h）・2024年'},
+    part:{v:12.41, u:'h', n:'法定最低賃金・Minijobにも適用'},
+  },
+  826:{ cur:'GBP', sym:'£',
+    min:{v:11.44, u:'h', n:'国家生活賃金（21歳以上）・2024年'},
+    avg:{v:21.5,  u:'h', n:'全産業平均（33,000£/年÷1,532h）・2024年'},
+    part:{v:11.44, u:'h', n:'NLW・パートタイムにも全額適用'},
+  },
+  682:{ cur:'SAR', sym:'﷼',
+    min:{v:4000,  u:'m', n:'サウジ人法定最低賃金（月額）・2024年'},
+    avg:{v:36.5,  u:'h', n:'サウジ人平均（70,000SAR/年÷1,920h）・2024年'},
+    part:{v:24.0, u:'h', n:'外国人労働者推計（カファラ制度下）'},
+  },
+  764:{ cur:'THB', sym:'฿',
+    min:{v:354,   u:'d', n:'法定最低賃金（日額・バンコク周辺・最高水準）・2024年'},
+    avg:{v:110,   u:'h', n:'全産業平均（22,000฿/月÷200h）・2024年'},
+    part:{v:44.3, u:'h', n:'最低賃金換算（354฿/日÷8h）'},
+  },
+  702:{ cur:'SGD', sym:'S$',
+    min:{v:null,  u:'h', n:'最低賃金制度なし（業種別Progressive Wage Model）'},
+    avg:{v:29.4,  u:'h', n:'全産業平均（5,000SGD/月÷170h）・2024年'},
+    part:{v:9.0,  u:'h', n:'Progressive Wage最低（一部業種）・2024年'},
+  },
+  76:{ cur:'BRL', sym:'R$',
+    min:{v:1412,  u:'m', n:'連邦最低賃金（月額）・2024年'},
+    avg:{v:22.4,  u:'h', n:'全産業平均（3,800R$/月÷170h）・2024年'},
+    part:{v:6.42, u:'h', n:'最低賃金換算（1,412R$/月÷220h）'},
+  },
+  36:{ cur:'AUD', sym:'A$',
+    min:{v:23.23, u:'h', n:'国家最低賃金（NMW）・2024年（世界最高水準）'},
+    avg:{v:53.1,  u:'h', n:'全産業平均（90,000A$/年÷1,694h）・2024年'},
+    part:{v:23.23, u:'h', n:'NMW・パートタイムにも全額適用'},
+  },
+  380:{ cur:'EUR', sym:'€',
+    min:{v:null,  u:'h', n:'法定最低賃金なし（業種別労働協約が実質下限）'},
+    avg:{v:16.2,  u:'h', n:'全産業平均（28,000€/年÷1,726h）・2024年'},
+    part:{v:8.5,  u:'h', n:'業種別協約下限推計・2024年'},
+  },
+  724:{ cur:'EUR', sym:'€',
+    min:{v:8.32,  u:'h', n:'SMI法定最低賃金（1,134€/月換算）・2024年'},
+    avg:{v:14.2,  u:'h', n:'全産業平均（24,000€/年÷1,686h）・2024年'},
+    part:{v:8.32, u:'h', n:'SMI・パートタイムにも適用'},
+  },
+  528:{ cur:'EUR', sym:'€',
+    min:{v:13.27, u:'h', n:'法定最低賃金・2024年'},
+    avg:{v:28.0,  u:'h', n:'全産業平均（40,000€/年÷1,427h）・2024年'},
+    part:{v:13.27, u:'h', n:'法定最低賃金・パートタイムにも全額適用'},
+  },
+  752:{ cur:'SEK', sym:'kr',
+    min:{v:null,  u:'h', n:'法定最低賃金なし（業界別労使協約で決定）'},
+    avg:{v:330,   u:'h', n:'全産業平均推計（年収約540,000kr÷1,621h）・2024年'},
+    part:{v:195,  u:'h', n:'業界協約下限推計（コールセンター等）・2024年'},
+  },
+  578:{ cur:'NOK', sym:'kr',
+    min:{v:null,  u:'h', n:'法定最低賃金なし（業界別労使協約で決定）'},
+    avg:{v:420,   u:'h', n:'全産業平均推計（年収約680,000kr÷1,621h）・2024年'},
+    part:{v:200,  u:'h', n:'一般サービス業協約下限推計・2024年'},
+  },
+  124:{ cur:'CAD', sym:'C$',
+    min:{v:16.6,  u:'h', n:'各州加重平均（ONT$17.20・BC$17.40等）・2024年'},
+    avg:{v:35.3,  u:'h', n:'全産業平均（60,000CAD/年÷1,698h）・2024年'},
+    part:{v:16.6, u:'h', n:'各州最低賃金（パートタイムにも適用）'},
+  },
+  484:{ cur:'MXN', sym:'$',
+    min:{v:248.93, u:'d', n:'法定最低賃金（日額）・2024年（国境地帯は312.41）'},
+    avg:{v:88.2,   u:'h', n:'全産業平均（15,000MXN/月÷170h）・2024年'},
+    part:{v:31.1,  u:'h', n:'最低賃金換算（248.93MXN/日÷8h）'},
+  },
+  643:{ cur:'RUB', sym:'₽',
+    min:{v:22440, u:'m', n:'法定最低賃金（月額）・2024年'},
+    avg:{v:441,   u:'h', n:'全産業平均（75,000₽/月÷170h）・2024年'},
+    part:{v:132,  u:'h', n:'最低賃金換算（22,440₽/月÷170h）'},
+  },
+  792:{ cur:'TRY', sym:'₺',
+    min:{v:17002, u:'m', n:'法定最低賃金（月額）・2024年（高インフレで頻繁改定）'},
+    avg:{v:176.5, u:'h', n:'全産業平均（30,000₺/月÷170h）・2024年'},
+    part:{v:94.5, u:'h', n:'最低賃金換算（17,002₺/月÷180h）'},
+  },
+  704:{ cur:'VND', sym:'₫',
+    min:{v:4960000, u:'m', n:'ゾーン1最低賃金（月額・ハノイ・ホーチミン）・2024年'},
+    avg:{v:50000,   u:'h', n:'全産業平均（10,000,000₫/月÷200h）・2024年'},
+    part:{v:23846,  u:'h', n:'最低賃金換算（4,960,000₫/月÷208h）'},
+  },
+  360:{ cur:'IDR', sym:'Rp',
+    min:{v:5067381, u:'m', n:'ジャカルタ最低賃金（月額・全国最高）・2024年'},
+    avg:{v:41176,   u:'h', n:'全産業平均（7,000,000Rp/月÷170h）・2024年'},
+    part:{v:29292,  u:'h', n:'ジャカルタ最低賃金換算（5,067,381÷173h）'},
+  },
+  458:{ cur:'MYR', sym:'RM',
+    min:{v:1700,  u:'m', n:'法定最低賃金（月額）・2024年'},
+    avg:{v:29.4,  u:'h', n:'全産業平均（5,000MYR/月÷170h）・2024年'},
+    part:{v:9.83, u:'h', n:'最低賃金換算（1,700MYR/月÷173h）'},
+  },
+  608:{ cur:'PHP', sym:'₱',
+    min:{v:588,   u:'d', n:'Metro Manila日額最低賃金・2024年'},
+    avg:{v:125,   u:'h', n:'全産業平均（25,000₱/月÷200h）・2024年'},
+    part:{v:73.5, u:'h', n:'最低賃金換算（588₱/日÷8h）'},
+  },
+  710:{ cur:'ZAR', sym:'R',
+    min:{v:27.58, u:'h', n:'国家最低賃金（NMW）・2024年'},
+    avg:{v:205.9, u:'h', n:'全産業平均（35,000R/月÷170h）・2024年'},
+    part:{v:27.58, u:'h', n:'NMW・パートタイムにも適用'},
+  },
+  32:{ cur:'ARS', sym:'$',
+    min:{v:229000, u:'m', n:'法定最低賃金（月額）・2024年（超インフレで毎月改定）'},
+    avg:{v:460000, u:'m', n:'全産業平均推計（月額・名目値は急変動）・2024年'},
+    part:{v:null,  u:'h', n:'データなし（超インフレにより不安定）'},
+  },
+};
+
 // ── 地域別最低賃金（2025年10月04日改定・checker.py 取得） ──────────────────
 let MINWAGE_JP = {
   '北海道':1075,'青森':1029,'岩手':1031,'宮城':1038,'秋田':1031,
@@ -2607,7 +2754,11 @@ function renderCards(info, tab){
     // 💴 労働・賃金ビュー
     // ══════════════════════════════════
     if(econView === 'work'){
-      const minPerK = Math.round(1000 / w.hourly * 60);
+      // WAGE_LOCAL_DB の平均時給 × FX_RATES で円換算（取得できない場合は WORK_DB 固定値）
+      const _wl = WAGE_LOCAL_DB[currentCountryId];
+      const _avgJPY = (_wl && _wl.avg && _wl.avg.v && _wl.avg.u === 'h')
+        ? (_wageToJPY(_wl.avg.v, _wl.cur) || w.hourly) : w.hourly;
+      const minPerK = Math.round(1000 / _avgJPY * 60);
       const hStr = minPerK >= 60 ? `${Math.floor(minPerK/60)}時間${minPerK%60>0?minPerK%60+'分':''}` : `${minPerK}分`;
       const jpMin = Math.round(1000 / 2850 * 60);
       const diff = minPerK === jpMin ? '＝日本と同等'
@@ -2625,6 +2776,7 @@ function renderCards(info, tab){
         </div>`;
       }
       pb.innerHTML = sw +
+        buildWageCard(currentCountryId) +
         `<div class="card">
           <div class="card-title">⏱ 労働時間</div>
           <div class="card-body">
@@ -2633,9 +2785,9 @@ function renderCards(info, tab){
           </div>
         </div>` +
         `<div class="card">
-          <div class="card-title">💴 時給比較</div>
+          <div class="card-title">💴 円換算・時給</div>
           <div class="card-body">
-            <span style="font-size:0.82em;color:var(--tx3)">全体平均</span><br>
+            <span style="font-size:0.82em;color:var(--tx3)">全体平均（参考値）</span><br>
             <span style="font-size:1.35em;font-weight:600;color:#178DDC">${w.hourly.toLocaleString()}円/h</span>
             ${ptRow}
             ${fxLine(currentCountryId)}
@@ -3416,10 +3568,23 @@ function _drawPrefMap(topo){
 // ══════════════════════════════════════════════════════════════════════════════
 const WCM_CONFIG = {
   // FX為替レート
-  fxCacheKey: 'wcm_jpy_fx_v2',              // localStorageキー（変更でキャッシュクリア）
-  fxTtlMs:    30 * 24 * 60 * 60 * 1000,     // 更新間隔: 30日（ミリ秒）
-  fxApiBase:  'https://api.frankfurter.app/latest',
+  fxCacheKey:  'wcm_jpy_fx_v2',             // localStorageキー（変更でキャッシュクリア）
+  fxUpdateDay: 1,                            // 更新日: 毎月1日
+  fxApiBase:   'https://api.frankfurter.app/latest',
 };
+
+/** キャッシュが今月取得済みなら有効（毎月1日に自動更新） */
+function fxCacheValid(ts) {
+  if (!ts) return false;
+  const c = new Date(ts), n = new Date();
+  return c.getFullYear() === n.getFullYear() && c.getMonth() === n.getMonth();
+}
+
+/** 翌月1日をDate型で返す */
+function nextFxUpdate(ts) {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+}
 
 // ── 可処分所得データベース ─────────────────────────────────────────────────
 // 【算出方法】全労働者平均額面（正規＋非正規含む）から
@@ -3493,27 +3658,48 @@ let FX_RATES = {}; // ISO code → (1 JPY = X外貨)
 let FX_CACHED_AT = 0; // キャッシュ取得タイムスタンプ
 
 async function loadFxRates(force = false) {
+  // ── まず fx_rates.json（checker_fx.py が毎月1日更新）をベースにロード ──
+  // Frankfurter がカバーしない通貨（KRW・VND・IDR・ARS等）をカバーするため
+  let fileRates = {};
+  try {
+    const fr = await fetch('/data/fx_rates.json');
+    if(fr.ok){
+      const fd = await fr.json();
+      if(fd && fd.rates) fileRates = fd.rates;
+    }
+  } catch(e) {}
+
+  // ── localStorage キャッシュ確認 ──
   if (!force) {
     try {
       const cached = JSON.parse(localStorage.getItem(WCM_CONFIG.fxCacheKey) || 'null');
-      if (cached && Date.now() - cached.ts < WCM_CONFIG.fxTtlMs) {
-        FX_RATES = cached.rates;
+      if (cached && fxCacheValid(cached.ts)) {
+        // キャッシュ有効: file rates で補完してから使用
+        FX_RATES = {...fileRates, ...cached.rates}; // API rates が優先
         FX_CACHED_AT = cached.ts;
+        if(currentInfo && currentTab === 4 && econView === 'work') renderCards(currentInfo, 4);
         return;
       }
     } catch(e) {}
   }
+
+  // ── Frankfurter API から最新レートを取得 ──
   try {
     const codes = [...new Set(Object.values(CURRENCY_MAP).map(c => c.code))].join(',');
     const res = await fetch(`${WCM_CONFIG.fxApiBase}?from=JPY&to=${codes}`);
     if (!res.ok) throw new Error('API ' + res.status);
     const data = await res.json();
-    FX_RATES = data.rates || {};
+    // file rates を下地に、API rates で上書き（API が信頼性高い）
+    FX_RATES = {...fileRates, ...(data.rates || {})};
     FX_CACHED_AT = Date.now();
     localStorage.setItem(WCM_CONFIG.fxCacheKey, JSON.stringify({ts: FX_CACHED_AT, rates: FX_RATES}));
   } catch(e) {
-    console.warn('[FX] 取得失敗:', e);
+    console.warn('[FX] API取得失敗:', e);
+    // API 失敗時は file rates をフォールバックとして使用
+    FX_RATES = fileRates;
+    FX_CACHED_AT = Date.now();
   }
+  if(currentInfo && currentTab === 4 && econView === 'work') renderCards(currentInfo, 4);
 }
 
 // 時給比較カード用: 100円 = X [code]
@@ -3543,8 +3729,8 @@ function fxRateInJPY(countryId) {
             : perUnit >= 10  ? perUnit.toFixed(1)
             : perUnit >= 1   ? perUnit.toFixed(2)
             :                  perUnit.toFixed(4);
-  const updDate = FX_CACHED_AT ? new Date(FX_CACHED_AT).toLocaleDateString('ja-JP', {year:'numeric',month:'numeric',day:'numeric'}) : '—';
-  const nextDate = FX_CACHED_AT ? new Date(FX_CACHED_AT + WCM_CONFIG.fxTtlMs).toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'}) : '—';
+  const updDate  = FX_CACHED_AT ? new Date(FX_CACHED_AT).toLocaleDateString('ja-JP', {year:'numeric',month:'numeric',day:'numeric'}) : '—';
+  const nextDate = FX_CACHED_AT ? nextFxUpdate(FX_CACHED_AT).toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'}) : '—';
   return `<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd)">
     <span style="font-size:0.82em;color:var(--tx3)">💱 対円レート（月次更新）</span><br>
     <span style="font-size:1.05em;font-weight:600;color:var(--tx)">1 ${cm.code} ＝ ${jpy} 円</span>
@@ -3554,6 +3740,75 @@ function fxRateInJPY(countryId) {
 }
 
 loadFxRates(); // 初回キャッシュ優先
+
+// ── 賃金カード（WAGE_LOCAL_DB + FX_RATES で現地通貨 + 円換算表示） ────────────
+function _wageToJPY(v, cur){
+  if(v == null) return null;
+  if(cur === 'JPY') return Math.round(v);
+  const rate = FX_RATES[cur]; // 1 JPY = rate [cur]
+  if(!rate) return null;
+  return Math.round(v / rate); // v [cur] ÷ rate [cur/JPY] = JPY
+}
+function _fmtLocal(v, sym){
+  if(v == null) return '—';
+  if(v >= 10000000) return `${sym}${(v/10000).toFixed(0)}万`;
+  if(v >= 1000000)  return `${sym}${(v/10000).toFixed(1)}万`;
+  if(v >= 10000)    return `${sym}${(v/10000).toFixed(2)}万`;
+  if(v >= 1000)     return `${sym}${v.toLocaleString('ja-JP')}`;
+  if(v >= 100)      return `${sym}${v.toFixed(0)}`;
+  if(v >= 10)       return `${sym}${v.toFixed(1)}`;
+  return `${sym}${v.toFixed(2)}`;
+}
+function _unitSuffix(u){ return u==='h'?'/h': u==='m'?'/月':'/日'; }
+function _fmtJPY(jpy, u){
+  if(!jpy) return '';
+  const s = jpy>=10000 ? `${(jpy/10000).toFixed(1)}万` : jpy.toLocaleString('ja-JP');
+  return `≒${s}円${_unitSuffix(u)}`;
+}
+
+function buildWageCard(countryId){
+  const wl = WAGE_LOCAL_DB[countryId];
+  if(!wl) return '';
+
+  function cell(icon, label, entry){
+    if(!entry) return `<div><div style="font-size:10px;color:var(--tx3)">${icon} ${label}</div><div style="font-size:11px;color:var(--tx3)">—</div></div>`;
+    const localStr  = _fmtLocal(entry.v, wl.sym) + _unitSuffix(entry.u);
+    const jpyVal    = _wageToJPY(entry.v, wl.cur);
+    const jpyStr    = jpyVal ? _fmtJPY(jpyVal, entry.u) : '(レート取得中)';
+    const noteStr   = entry.n || '';
+    const hasData   = entry.v != null;
+    return `<div>
+      <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">${icon} ${label}</div>
+      ${hasData
+        ? `<div style="font-size:13px;font-weight:700;color:var(--tx)">${localStr}</div>
+           <div style="font-size:11px;color:#178DDC">${jpyStr}</div>`
+        : `<div style="font-size:12px;color:var(--tx3)">—</div>`}
+      <div style="font-size:9px;color:var(--tx3);margin-top:3px;line-height:1.4">${noteStr}</div>
+    </div>`;
+  }
+
+  const cm = CURRENCY_MAP[countryId];
+  const rateStr = (() => {
+    if(wl.cur === 'JPY') return '円建て（換算不要）';
+    const rate = FX_RATES[wl.cur];
+    if(!rate) return 'レート取得中…';
+    const perUnit = (1 / rate).toFixed(rate < 0.001 ? 4 : rate < 0.01 ? 3 : rate < 1 ? 2 : 1);
+    const cacheDate = FX_CACHED_AT ? new Date(FX_CACHED_AT).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}) : '';
+    return `1 ${wl.cur} ＝ ${perUnit}円${cacheDate ? '（'+cacheDate+'更新）' : ''}`;
+  })();
+
+  return `<div class="econ-full-card" style="background:rgba(23,141,220,0.05);border:1px solid rgba(23,141,220,0.22)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:7px;border-bottom:0.5px solid var(--bd);margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600;color:var(--tx)">💴 賃金比較（現地通貨 + 円換算）</span>
+      <span style="font-size:10px;color:var(--tx3)">💱 ${rateStr}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      ${cell('🔻','最低賃金',wl.min)}
+      ${cell('📈','平均時給/月給',wl.avg)}
+      ${cell('⏰','バイト・パート',wl.part)}
+    </div>
+  </div>`;
+}
 
 // ── タイムゾーンデータベース ──────────────────────────────────────────────
 // offset: UTC+X（標準時。夏時間は未考慮）

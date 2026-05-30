@@ -492,7 +492,13 @@ fetchData();
 // 円レート（月次キャッシュ）
 // =============================================
 const FX_CACHE_KEY = 'jpy_fx_cache';
-const FX_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30日
+
+/** キャッシュが今月取得済みなら有効（毎月1日に自動更新） */
+function fxCacheValid(ts) {
+  if (!ts) return false;
+  const c = new Date(ts), n = new Date();
+  return c.getFullYear() === n.getFullYear() && c.getMonth() === n.getMonth();
+}
 
 const FX_PAIRS = [
   { code: 'USD', label: '米ドル',           flag: '🇺🇸' },
@@ -541,10 +547,11 @@ async function fetchFX(forceRefresh = false) {
   if (!forceRefresh) {
     try {
       const cached = JSON.parse(localStorage.getItem(FX_CACHE_KEY) || 'null');
-      if (cached && (Date.now() - cached.fetchedAt) < FX_TTL_MS) {
+      if (cached && fxCacheValid(cached.fetchedAt)) {
         renderFxGrid(cached.rates, cached.date);
-        const daysLeft = Math.ceil((FX_TTL_MS - (Date.now() - cached.fetchedAt)) / 86400000);
-        setFxStatus('ok', `キャッシュ使用中（次回更新まで約${daysLeft}日）`);
+        const next = new Date(new Date(cached.fetchedAt).getFullYear(), new Date(cached.fetchedAt).getMonth() + 1, 1);
+        const nextStr = `${next.getMonth()+1}月1日`;
+        setFxStatus('ok', `キャッシュ使用中（次回更新: ${nextStr}）`);
         return;
       }
     } catch(_) {}
