@@ -18,9 +18,18 @@ export default function RootLayout({
         {/* ヘッダー */}
         <header style={{ backgroundColor: "#1e293b", borderBottom: "1px solid #334155" }}>
           <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="text-xl font-black" style={{ color: "#38bdf8" }}>
-              社会のトリセツ
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-xl font-black" style={{ color: "#38bdf8" }}>
+                社会のトリセツ
+              </Link>
+              <Link
+                href="/nichijo"
+                className="text-xs font-bold px-3 py-1 rounded-full transition-opacity hover:opacity-80"
+                style={{ backgroundColor: "#ef4444", color: "#fff" }}
+              >
+                日常
+              </Link>
+            </div>
             <nav className="flex gap-6 text-sm font-medium" style={{ color: "#94a3b8" }}>
               <Link href="/quiz" className="hover:text-white transition-colors">クイズ</Link>
               <Link href="/blog" className="hover:text-white transition-colors">記事</Link>

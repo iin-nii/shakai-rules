@@ -1,0 +1,8 @@
+2026-05-31 05:50:21,866 [INFO] ===== checker_fx.py 起動 =====
+2026-05-31 05:50:21,867 [INFO] APIリクエスト: https://open.er-api.com/v6/latest/USD
+2026-05-31 05:50:22,474 [INFO] レート取得成功: 28通貨  USD=159.27円
+2026-05-31 05:50:22,486 [INFO] 保存完了: C:\Users\Hintl\Desktop\社会のトリセツ\shakai-rules\public\data\fx_rates.json
+2026-06-01 06:00:04,764 [INFO] ===== checker_fx.py 起動 =====
+2026-06-01 06:00:04,983 [INFO] APIリクエスト: https://open.er-api.com/v6/latest/USD
+2026-06-01 06:00:05,635 [INFO] レート取得成功: 28通貨  USD=159.25円
+2026-06-01 06:00:05,667 [INFO] 保存完了: C:\Users\Hintl\Desktop\社会のトリセツ\shakai-rules\public\data\fx_rates.json
