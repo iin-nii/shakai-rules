@@ -33,6 +33,15 @@ const tools = [
     bgColor: "#1a0f2e",
     tag: "キャリア・人生設計",
   },
+  {
+    href: "/tools/jikkyu",
+    icon: "⏱",
+    title: "実質時給・損益計算ツール",
+    description: "作業時間・収入・コストを入力して実質時給と純利益を算出。副業・フリーランス・メルカリ販売などの収益性を可視化。",
+    color: "#7dd3fc",
+    bgColor: "#0a1a24",
+    tag: "収入・副業",
+  },
 ];
 
 export default function ToolsPage() {

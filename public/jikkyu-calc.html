@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実質時給・損益計算ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Meiryo, sans-serif;
+    background: #0f0f14;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    color: #7dd3fc;
+    margin-bottom: 24px;
+    letter-spacing: 0.05em;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto 24px;
+  }
+  .card {
+    background: #1a1a24;
+    border: 1px solid #2a2a38;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2 {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a2a38;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .row label {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #c0c0c0;
+    min-width: 0;
+  }
+  .row input[type=number], .row input[type=text], .row select {
+    width: 130px;
+    background: #0f0f14;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e0e0e0;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    text-align: right;
+  }
+  .row input:focus, .row select:focus {
+    outline: none;
+    border-color: #7dd3fc;
+  }
+  .row .unit {
+    font-size: 0.75rem;
+    color: #666;
+    width: 28px;
+  }
+  .add-btn {
+    background: #1e293b;
+    border: 1px dashed #334;
+    color: #7dd3fc;
+    width: 100%;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+  .add-btn:hover { background: #243447; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: #ef4444; }
+
+  /* 結果パネル */
+  .result-panel {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #1a1a24;
+    border: 1px solid #2a2a38;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .result-panel h2 {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a2a38;
+  }
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: #0f0f14;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .kpi .label { font-size: 0.72rem; color: #666; margin-bottom: 6px; }
+  .kpi .value { font-size: 1.5rem; font-weight: bold; }
+  .kpi.good .value { color: #4ade80; }
+  .kpi.bad  .value { color: #f87171; }
+  .kpi.neutral .value { color: #7dd3fc; }
+  .kpi.warn .value { color: #fbbf24; }
+
+  .breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .breakdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .breakdown table th {
+    color: #666;
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #222;
+    font-weight: normal;
+  }
+  .breakdown table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #1e1e28;
+  }
+  .breakdown table td:last-child { text-align: right; }
+  .breakdown table .total td {
+    border-top: 1px solid #333;
+    font-weight: bold;
+    color: #e0e0e0;
+  }
+
+  /* 判定バー */
+  .judge-bar {
+    margin-top: 16px;
+  }
+  .judge-bar .bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  .bar-track {
+    height: 20px;
+    background: #111;
+    border-radius: 10px;
+    position: relative;
+    overflow: visible;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+  .bar-fill.green { background: linear-gradient(90deg, #166534, #4ade80); }
+  .bar-fill.red   { background: linear-gradient(90deg, #7f1d1d, #f87171); }
+  .bar-fill.yellow { background: linear-gradient(90deg, #713f12, #fbbf24); }
+  .bar-needle {
+    position: absolute;
+    top: -4px;
+    height: 28px;
+    width: 2px;
+    background: #fff;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.4s ease;
+  }
+  .needle-label {
+    position: absolute;
+    top: -22px;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .calc-btn {
+    display: block;
+    width: 100%;
+    max-width: 1400px;
+    margin: 16px auto;
+    padding: 14px;
+    background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .calc-btn:hover { opacity: 0.9; }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .tag.plus { background: #14532d; color: #4ade80; }
+  .tag.minus { background: #7f1d1d; color: #f87171; }
+  .tag.zero  { background: #1e293b; color: #94a3b8; }
+
+  @media(max-width:600px){
+    .breakdown { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⏱ 実質時給・損益計算ツール</h1>
+
+<div class="grid">
+
+  <!-- 目標時給 -->
+  <div class="card">
+    <h2>🎯 目標設定</h2>
+    <div class="row">
+      <label>最低目標時給</label>
+      <input type="number" id="min_wage" value="1000" min="0">
+      <span class="unit">円/h</span>
+    </div>
+    <div class="row">
+      <label>最高目標時給（理想）</label>
+      <input type="number" id="max_wage" value="3000" min="0">
+      <span class="unit">円/h</span>
+    </div>
+    <div class="row">
+      <label>計算期間</label>
+      <select id="period">
+        <option value="day">1日</option>
+        <option value="week">1週間</option>
+        <option value="month" selected>1ヶ月</option>
+      </select>
+      <span class="unit"></span>
+    </div>
+  </div>
+
+  <!-- 作業時間 -->
+  <div class="card">
+    <h2>🕐 作業時間（時間）</h2>
+    <div id="time-rows">
+      <div class="row time-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="制作・作業" placeholder="作業名"></label>
+        <input type="number" value="3" min="0" step="0.5">
+        <span class="unit">h</span>
+      </div>
+      <div class="row time-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="リサーチ・情報収集" placeholder="作業名"></label>
+        <input type="number" value="1" min="0" step="0.5">
+        <span class="unit">h</span>
+      </div>
+      <div class="row time-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="発送・梱包" placeholder="作業名"></label>
+        <input type="number" value="0.5" min="0" step="0.5">
+        <span class="unit">h</span>
+      </div>
+      <div class="row time-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="SNS・集客" placeholder="作業名"></label>
+        <input type="number" value="0.5" min="0" step="0.5">
+        <span class="unit">h</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addTimeRow()">＋ 作業を追加</button>
+  </div>
+
+  <!-- 収入 -->
+  <div class="card">
+    <h2>💰 収入</h2>
+    <div id="income-rows">
+      <div class="row inc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="時給・委託報酬" placeholder="収入源"></label>
+        <input type="number" value="0" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row inc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="販売売上（メルカリ等）" placeholder="収入源"></label>
+        <input type="number" value="15000" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row inc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="アフィリ・広告収入" placeholder="収入源"></label>
+        <input type="number" value="0" min="0">
+        <span class="unit">円</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addIncRow()">＋ 収入を追加</button>
+  </div>
+
+  <!-- 販売コスト -->
+  <div class="card">
+    <h2>📦 販売コスト（変動費）</h2>
+    <div id="vcost-rows">
+      <div class="row vc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="仕入れ・原材料費" placeholder="費目"></label>
+        <input type="number" value="5000" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row vc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="送料・梱包資材" placeholder="費目"></label>
+        <input type="number" value="800" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row vc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="プラットフォーム手数料" placeholder="費目"></label>
+        <input type="number" value="1500" min="0">
+        <span class="unit">円</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addVCostRow()">＋ 費目を追加</button>
+  </div>
+
+  <!-- 固定費 -->
+  <div class="card">
+    <h2>🏠 固定費（月割）</h2>
+    <div id="fcost-rows">
+      <div class="row fc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="電気代（按分）" placeholder="費目"></label>
+        <input type="number" value="2000" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row fc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="通信費（按分）" placeholder="費目"></label>
+        <input type="number" value="1000" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row fc-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="ツール・サブスク" placeholder="費目"></label>
+        <input type="number" value="500" min="0">
+        <span class="unit">円</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addFCostRow()">＋ 費目を追加</button>
+  </div>
+
+  <!-- 非効率・損失 -->
+  <div class="card">
+    <h2>⚠️ 損失・非効率コスト</h2>
+    <div id="loss-rows">
+      <div class="row ls-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="返品・クレーム損失" placeholder="内容"></label>
+        <input type="number" value="0" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row ls-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="売れ残り在庫（評価額）" placeholder="内容"></label>
+        <input type="number" value="0" min="0">
+        <span class="unit">円</span>
+      </div>
+      <div class="row ls-item">
+        <button class="del-btn" onclick="delRow(this)">✕</button>
+        <label><input type="text" style="width:100%;text-align:left" value="無駄な待機・移動時間</label>
+        <input type="number" value="0" min="0" step="0.5">
+        <span class="unit">h</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addLossRow()">＋ 損失を追加</button>
+    <div style="font-size:0.72rem;color:#555;margin-top:8px;">※ 時間の行は機会損失として最低時給×時間で計算</div>
+  </div>
+
+</div>
+
+<button class="calc-btn" onclick="calc()">▶ 計算する</button>
+
+<!-- 結果 -->
+<div class="result-panel" id="result" style="display:none">
+  <h2>📊 計算結果</h2>
+
+  <div class="result-grid" id="kpi-grid"></div>
+
+  <div class="judge-bar">
+    <div class="bar-labels">
+      <span id="bar-min-label">最低 ¥1,000/h</span>
+      <span style="color:#888">実質時給の位置</span>
+      <span id="bar-max-label">理想 ¥3,000/h</span>
+    </div>
+    <div class="bar-track" id="bar-track">
+      <div class="bar-fill" id="bar-fill" style="width:0%"></div>
+      <div class="bar-needle" id="bar-needle" style="left:0%">
+        <div class="needle-label" id="needle-label">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="breakdown" style="margin-top:20px">
+    <div>
+      <table id="income-table">
+        <tr><th>収入内訳</th><th>金額</th></tr>
+      </table>
+    </div>
+    <div>
+      <table id="cost-table">
+        <tr><th>コスト内訳</th><th>金額</th></tr>
+      </table>
+    </div>
+  </div>
+
+  <div id="time-breakdown" style="margin-top:16px"></div>
+</div>
+
+<script>
+function delRow(btn){ btn.closest('.row').remove(); }
+
+function makeRow(containerId, cls, namePlaceholder, unit, defName, defVal){
+  const d = document.createElement('div');
+  d.className = 'row ' + cls;
+  const isHour = unit === 'h';
+  d.innerHTML = `
+    <button class="del-btn" onclick="delRow(this)">✕</button>
+    <label><input type="text" style="width:100%;text-align:left" value="${defName}" placeholder="${namePlaceholder}"></label>
+    <input type="number" value="${defVal}" min="0" step="${isHour?'0.5':'1'}">
+    <span class="unit">${unit}</span>`;
+  document.getElementById(containerId).appendChild(d);
+}
+function addTimeRow(){ makeRow('time-rows','time-item','作業名','h','',0); }
+function addIncRow(){  makeRow('income-rows','inc-item','収入源','円','',0); }
+function addVCostRow(){ makeRow('vcost-rows','vc-item','費目','円','',0); }
+function addFCostRow(){ makeRow('fcost-rows','fc-item','費目','円','',0); }
+function addLossRow(){ makeRow('loss-rows','ls-item','内容','円','',0); }
+
+function rowsSum(cls){
+  let total=0;
+  document.querySelectorAll('.'+cls).forEach(r=>{
+    const v = parseFloat(r.querySelectorAll('input[type=number]')[0]?.value)||0;
+    total+=v;
+  });
+  return total;
+}
+function rowsData(cls){
+  const res=[];
+  document.querySelectorAll('.'+cls).forEach(r=>{
+    const name = r.querySelector('input[type=text]')?.value||'(無名)';
+    const val  = parseFloat(r.querySelectorAll('input[type=number]')[0]?.value)||0;
+    const unit = r.querySelector('.unit')?.textContent.trim()||'';
+    res.push({name,val,unit});
+  });
+  return res;
+}
+
+function fmt(n){ return n.toLocaleString('ja-JP',{maximumFractionDigits:0}); }
+function fmtH(n){ return n.toLocaleString('ja-JP',{maximumFractionDigits:1}); }
+
+function calc(){
+  const minW = parseFloat(document.getElementById('min_wage').value)||0;
+  const maxW = parseFloat(document.getElementById('max_wage').value)||0;
+  const period = document.getElementById('period').value;
+
+  const times  = rowsData('time-item');
+  const incs   = rowsData('inc-item');
+  const vcosts = rowsData('vc-item');
+  const fcosts = rowsData('fc-item');
+  const losses = rowsData('ls-item');
+
+  // 期間係数
+  const pMap = {day:1, week:7, month:30};
+  const pLabel = {day:'日', week:'週', month:'月'};
+  // 固定費を日換算
+  const fCoef = {day:1/30, week:7/30, month:1}[period];
+
+  let totalHours = times.reduce((s,r)=>s+r.val,0);
+  let totalIncome = incs.reduce((s,r)=>s+r.val,0);
+  let totalVC     = vcosts.reduce((s,r)=>s+r.val,0);
+  let totalFC     = fcosts.reduce((s,r)=>s+r.val,0) * fCoef;
+
+  // 損失：単位が h なら機会損失として minW×h、それ以外は金額として加算
+  let lossHours = 0;
+  let lossMoney = 0;
+  let lossOpportunity = 0;
+  losses.forEach(r=>{
+    if(r.unit==='h'){ lossHours+=r.val; lossOpportunity+=r.val*minW; }
+    else { lossMoney+=r.val; }
+  });
+  const totalLoss = lossMoney + lossOpportunity;
+
+  const totalCost = totalVC + totalFC + totalLoss;
+  const netProfit = totalIncome - totalCost;
+  const effectiveHours = totalHours + lossHours;
+  const jikkyu = effectiveHours>0 ? netProfit/effectiveHours : 0;
+
+  // 結果表示
+  document.getElementById('result').style.display='block';
+
+  // KPI
+  const kpis = [
+    { label:'総収入', value:'¥'+fmt(totalIncome), cls: totalIncome>0?'good':'neutral' },
+    { label:'総コスト', value:'¥'+fmt(totalCost), cls: totalCost>totalIncome?'bad':'neutral' },
+    { label:'純利益', value:'¥'+fmt(netProfit), cls: netProfit>=0?'good':'bad' },
+    { label:'総作業時間', value: fmtH(totalHours)+'h', cls:'neutral' },
+    { label:'実質時給', value:'¥'+fmt(jikkyu)+'/h', cls: jikkyu>=minW?'good':jikkyu>0?'warn':'bad' },
+    { label:'判定', value: jikkyu>=maxW?'🌟 理想超え': jikkyu>=minW?'✅ 目標達成': jikkyu>0?'⚠ 最低未満':'❌ 赤字', cls: jikkyu>=maxW?'good':jikkyu>=minW?'good':jikkyu>0?'warn':'bad' },
+  ];
+  const kg = document.getElementById('kpi-grid');
+  kg.innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+    </div>`).join('');
+
+  // バー
+  document.getElementById('bar-min-label').textContent = `最低 ¥${fmt(minW)}/h`;
+  document.getElementById('bar-max-label').textContent = `理想 ¥${fmt(maxW)}/h`;
+  const range = maxW-minW||1;
+  let pct = Math.min(100, Math.max(0, (jikkyu-minW)/range*100));
+  const fill = document.getElementById('bar-fill');
+  fill.style.width = pct+'%';
+  fill.className = 'bar-fill '+(jikkyu>=maxW?'green':jikkyu>=minW?'yellow':'red');
+  const needle = document.getElementById('bar-needle');
+  needle.style.left = pct+'%';
+  document.getElementById('needle-label').textContent = '¥'+fmt(jikkyu);
+
+  // 収入内訳
+  const it = document.getElementById('income-table');
+  it.innerHTML = '<tr><th>収入内訳</th><th>金額</th></tr>';
+  incs.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.name}</td><td>¥${fmt(r.val)}</td>`;
+    it.appendChild(tr);
+  });
+  const itr=document.createElement('tr'); itr.className='total';
+  itr.innerHTML=`<td>合計</td><td>¥${fmt(totalIncome)}</td>`;
+  it.appendChild(itr);
+
+  // コスト内訳
+  const ct = document.getElementById('cost-table');
+  ct.innerHTML = '<tr><th>コスト内訳</th><th>金額</th></tr>';
+  vcosts.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.name}</td><td>¥${fmt(r.val)}</td>`; ct.appendChild(tr); });
+  fcosts.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.name}（月割）</td><td>¥${fmt(r.val*fCoef)}</td>`; ct.appendChild(tr); });
+  if(lossMoney>0){ const tr=document.createElement('tr'); tr.innerHTML=`<td>損失・返品等</td><td>¥${fmt(lossMoney)}</td>`; ct.appendChild(tr); }
+  if(lossOpportunity>0){ const tr=document.createElement('tr'); tr.innerHTML=`<td>機会損失（${fmtH(lossHours)}h × ¥${fmt(minW)}）</td><td>¥${fmt(lossOpportunity)}</td>`; ct.appendChild(tr); }
+  const ctr=document.createElement('tr'); ctr.className='total';
+  ctr.innerHTML=`<td>合計</td><td>¥${fmt(totalCost)}</td>`;
+  ct.appendChild(ctr);
+
+  // 作業別時給
+  let tb = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:0">';
+  tb += '<tr><th style="color:#666;text-align:left;padding:4px 6px;border-bottom:1px solid #222;font-weight:normal">作業別：時給換算</th><th style="color:#666;padding:4px 6px;border-bottom:1px solid #222;font-weight:normal;text-align:right">時間</th><th style="color:#666;padding:4px 6px;border-bottom:1px solid #222;font-weight:normal;text-align:right">この作業の実質時給</th></tr>';
+  times.forEach(r=>{
+    if(r.val<=0) return;
+    const share = r.val/totalHours;
+    const partJikkyu = netProfit*share/r.val;
+    const cls = partJikkyu>=minW?'#4ade80':partJikkyu>0?'#fbbf24':'#f87171';
+    tb+=`<tr><td style="padding:4px 6px;border-bottom:1px solid #1e1e28">${r.name}</td><td style="padding:4px 6px;border-bottom:1px solid #1e1e28;text-align:right">${fmtH(r.val)}h</td><td style="padding:4px 6px;border-bottom:1px solid #1e1e28;text-align:right;color:${cls}">¥${fmt(partJikkyu)}/h</td></tr>`;
+  });
+  tb += '</table>';
+  document.getElementById('time-breakdown').innerHTML = tb;
+
+  document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
