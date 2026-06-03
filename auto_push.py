@@ -1,7 +1,8 @@
 #!python3.10
 """
-HTMLファイル自動pushウォッチャー
-public/ 内の .html が保存されるたびに git commit + push する
+ファイル自動pushウォッチャー
+public/*.html / app/**/*.tsx / app/**/*.ts が保存されるたびに
+git commit + push する
 """
 
 import sys
@@ -15,7 +16,15 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 BASE_DIR = Path(__file__).parent
-PUBLIC_DIR = BASE_DIR / "public"
+
+# 監視対象ディレクトリと拡張子
+WATCH_TARGETS = [
+    (BASE_DIR / "public",   {".html"},        False),   # public/ html のみ 非再帰
+    (BASE_DIR / "app",      {".tsx", ".ts"},  True),    # app/ tsx/ts 再帰
+]
+
+# 除外パターン（node_modules は watchdog の schedule 対象外なので基本不要だが念のため）
+EXCLUDE_DIRS = {"node_modules", ".next", ".git", "__pycache__"}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,12 +65,18 @@ def git_push(filepath: Path):
         logging.error(f"gitエラー: {e.stderr or e}")
 
 
-class HtmlHandler(FileSystemEventHandler):
+class FileHandler(FileSystemEventHandler):
+    def __init__(self, extensions: set[str]):
+        self.extensions = extensions
+
     def on_modified(self, event):
         if event.is_directory:
             return
         path = Path(event.src_path)
-        if path.suffix.lower() != ".html":
+        # 除外ディレクトリを含むパスはスキップ
+        if any(ex in path.parts for ex in EXCLUDE_DIRS):
+            return
+        if path.suffix.lower() not in self.extensions:
             return
 
         # デバウンス: 連続保存は最後の1回だけ処理
@@ -74,12 +89,15 @@ class HtmlHandler(FileSystemEventHandler):
 
 
 def main():
-    logging.info(f"監視開始: {PUBLIC_DIR}")
-    logging.info("HTMLを保存するたびに自動でgit pushします（Ctrl+Cで停止）")
-
-    handler = HtmlHandler()
     observer = Observer()
-    observer.schedule(handler, str(PUBLIC_DIR), recursive=False)
+    for watch_dir, exts, recursive in WATCH_TARGETS:
+        if watch_dir.exists():
+            handler = FileHandler(exts)
+            observer.schedule(handler, str(watch_dir), recursive=recursive)
+            logging.info(f"監視開始: {watch_dir.relative_to(BASE_DIR)} "
+                         f"(拡張子: {', '.join(sorted(exts))}, 再帰: {recursive})")
+
+    logging.info("ファイルを保存するたびに自動でgit pushします（Ctrl+Cで停止）")
     observer.start()
 
     try:
