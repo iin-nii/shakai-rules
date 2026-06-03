@@ -106,6 +106,27 @@ export default function ShokujiPage() {
           </div>
         </section>
 
+        {/* サブページリンク */}
+        <section>
+          <h2 className="text-base font-bold mb-4 pb-2" style={{ color: "#22c55e", borderBottom: "1px solid #14532d" }}>
+            詳細リファレンス
+          </h2>
+          <Link
+            href="/nichijo/shokuji/seibun"
+            className="flex items-center justify-between rounded-xl p-4 transition-transform hover:scale-[1.01]"
+            style={{ backgroundColor: "#041a0a", border: "1px solid #0d2818" }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🔬</span>
+              <div>
+                <div className="font-black text-sm" style={{ color: "#22c55e" }}>栄養成分ガイド</div>
+                <div className="text-xs" style={{ color: "#4d7c5a" }}>必須栄養素・蓄積可能・ポジティブ成分の完全分類</div>
+              </div>
+            </div>
+            <span className="text-sm font-bold" style={{ color: "#22c55e" }}>開く →</span>
+          </Link>
+        </section>
+
         <div className="text-center pt-4">
           <Link href="/nichijo" className="text-sm" style={{ color: "#374151" }}>← 日常トップに戻る</Link>
         </div>
