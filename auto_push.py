@@ -69,16 +69,12 @@ class FileHandler(FileSystemEventHandler):
     def __init__(self, extensions: set[str]):
         self.extensions = extensions
 
-    def on_modified(self, event):
-        if event.is_directory:
-            return
-        path = Path(event.src_path)
-        # 除外ディレクトリを含むパスはスキップ
+    def _handle(self, path: Path):
+        """変更・新規作成を共通処理"""
         if any(ex in path.parts for ex in EXCLUDE_DIRS):
             return
         if path.suffix.lower() not in self.extensions:
             return
-
         # デバウンス: 連続保存は最後の1回だけ処理
         key = str(path)
         if key in _timers:
@@ -86,6 +82,15 @@ class FileHandler(FileSystemEventHandler):
         t = threading.Timer(DEBOUNCE_SEC, git_push, args=[path])
         _timers[key] = t
         t.start()
+
+    def on_modified(self, event):
+        if not event.is_directory:
+            self._handle(Path(event.src_path))
+
+    def on_created(self, event):
+        """新規ファイル作成も検知（他スレッドでファイルを新たに作った場合）"""
+        if not event.is_directory:
+            self._handle(Path(event.src_path))
 
 
 def main():
