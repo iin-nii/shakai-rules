@@ -77,6 +77,19 @@ svg#map:active { cursor:grabbing; }
 }
 .zbtn:hover { background:var(--bg2); }
 #censor-toggle-btn.active { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.40); color:#f87171; }
+#lang-toggle-btn.active  { background:rgba(139,92,246,0.13); border-color:rgba(139,92,246,0.42); color:#a78bfa; }
+
+/* ── 言語ファミリーオーバーレイ凡例 ── */
+#lang-legend {
+  position:absolute; bottom:10px; left:10px; z-index:11;
+  background:rgba(15,23,42,0.87); border:0.5px solid var(--bd);
+  border-radius:var(--r); padding:8px 12px; font-size:11px; color:var(--tx2);
+  backdrop-filter:blur(4px); pointer-events:none; display:none; min-width:190px;
+}
+#lang-legend .ll-title { font-size:11px; font-weight:600; color:var(--tx); margin-bottom:5px; }
+#lang-legend .ll-row   { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+#lang-legend .ll-row:last-child { margin-bottom:0; }
+#lang-legend .ll-sw    { width:12px; height:12px; border-radius:3px; flex-shrink:0; opacity:0.85; }
 
 /* ── ヒント ── */
 #hint {
@@ -403,6 +416,7 @@ svg#map:active { cursor:grabbing; }
       <button class="zbtn" onclick="doZoom(0.77)" title="縮小">−</button>
       <button class="zbtn" onclick="resetView()" title="リセット" style="font-size:11px">↺</button>
       <button class="zbtn" id="censor-toggle-btn" onclick="toggleCensor()" title="インターネット規制オーバーレイ（クリックで表示/非表示）" style="font-size:13px">🔒</button>
+      <button class="zbtn" id="lang-toggle-btn"   onclick="toggleLang()"   title="言語ファミリーオーバーレイ（クリックで表示/非表示）"   style="font-size:13px">🌐</button>
     </div>
     <div id="legend">
       <div class="leg-row"><div class="leg-dot" style="background:#1e2e48"></div>南北アメリカ</div>
@@ -427,6 +441,29 @@ svg#map:active { cursor:grabbing; }
         <div><div style="font-size:10px;font-weight:600;color:#fbbf24">部分規制・フィルタリング</div><div style="font-size:9px;color:var(--tx3)">特定サービス・コンテンツを規制</div></div>
       </div>
       <div style="font-size:9px;color:var(--tx3);margin-top:5px;padding-top:5px;border-top:0.5px solid var(--bd)">出典: Freedom on the Net / RSF<br>🖱 国をクリックで詳細表示</div>
+    </div>
+    <div id="lang-legend">
+      <div class="ll-title">🌐 言語ファミリー</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#f472b6"></div>日本語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#c084fc"></div>韓国語（孤立）</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#f87171"></div>シナ・チベット語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#22d3ee"></div>オーストロネシア語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#2dd4bf"></div>タイ・カダイ / オーストロアジア語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#f59e0b"></div>インド・アーリア / イラン語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#facc15"></div>テュルク語族</div>
+      <div class="ll-row" style="gap:3px">
+        <div class="ll-sw" style="background:#7dd3fc;flex-shrink:0"></div>
+        <div class="ll-sw" style="background:#1d4ed8;flex-shrink:0"></div>
+        <span>ロマンス語族（淡）/ ゲルマン語族（濃）</span>
+      </div>
+      <div class="ll-row"><div class="ll-sw" style="background:#a855f7"></div>スラブ語族</div>
+      <div class="ll-row"><div class="ll-sw" style="background:#4ade80"></div>セム語族</div>
+      <div class="ll-row" style="gap:3px">
+        <div class="ll-sw" style="background:#16a34a;flex-shrink:0"></div>
+        <div class="ll-sw" style="background:#14532d;flex-shrink:0"></div>
+        <span>バンツー（中緑）/ ニジェール・コンゴ（深緑）</span>
+      </div>
+      <div style="font-size:9px;color:var(--tx3);margin-top:5px;padding-top:5px;border-top:0.5px solid var(--bd)">同色相・明暗差で近縁語族を表現<br>🖱 国をクリックで言語ネットワーク表示</div>
     </div>
   </div>
 
@@ -2674,6 +2711,389 @@ const SAFETY_DB = {
   554:{ level:'safe',    overall:'GPI 4位（2024年）。世界最安全ランキング常連',                              crime:'犯罪率は非常に低い。車上荒らし・宿泊施設での盗難に注意',                                                     areas:'ほぼ全域で安全。オークランドの特定エリアの夜間注意程度',                                                                                           note:'自然リスク（地震・火山・急変天候）はある。マオリ文化への敬意が重要。ウォーキング・登山での天候急変に注意' },
 };
 
+// ── 言語ファミリーマップ（国ID → ファミリーキー） ──────────────────────────
+const LANG_FAMILY_MAP = {
+  392:'japonic',     156:'sinitic',     410:'koreanic',    496:'mongolic',
+  704:'austroasiatic',360:'austronesian',764:'tai-kadai',  458:'austronesian',
+  608:'austronesian',702:'sinitic',     104:'tibeto-burman',356:'indo-aryan',
+  586:'indo-aryan',  50:'indo-aryan',   524:'indo-aryan',  398:'turkic',
+  376:'semitic',     364:'indo-iranian',682:'semitic',     784:'semitic',
+  368:'semitic',     400:'semitic',     792:'turkic',
+  826:'germanic',    250:'romance',     276:'germanic',    380:'romance',
+  724:'romance',     528:'germanic',    752:'germanic',    578:'germanic',
+  616:'slavic',      804:'slavic',      300:'hellenic',    40:'germanic',
+  756:'germanic',    643:'slavic',
+  818:'semitic',     504:'semitic',     566:'niger-congo', 231:'semitic',
+  404:'bantu',       710:'bantu',
+  840:'germanic',    124:'germanic',    484:'romance',     76:'romance',
+  32:'romance',      152:'romance',     170:'romance',
+  36:'germanic',     554:'germanic',
+};
+
+// ── 言語ファミリーメタ（ラベル・マップ色） ─────────────────────────────────
+// 色設計の方針:
+//  ① 異なる語族には原則として異なる色相を使う（単色原則）
+//  ② 隣接・類縁の語族は同色相で明暗差をつける（例: ロマンス=淡青 / ゲルマン=濃青）
+//  ③ 「緑多すぎ」「テュルク埋もれ」「欧州2青が近い」の3問題を修正
+const LANG_FAMILY_META = {
+  // ── 東アジア（赤〜ピンク）─────────────────────────────────────
+  japonic:          {color:'#f472b6', label:'日本語族'},           // ピンク
+  koreanic:         {color:'#c084fc', label:'韓国語（孤立）'},     // 薄紫（日本語族ピンクと明確差）
+  sinitic:          {color:'#f87171', label:'シナ・チベット語族'}, // 珊瑚赤
+  'tibeto-burman':  {color:'#fb923c', label:'チベット・ビルマ語族'}, // オレンジ
+
+  // ── 東南アジア（シアン〜ティール）────────────────────────────
+  austronesian:     {color:'#22d3ee', label:'オーストロネシア語族'}, // 明シアン（緑→シアンに変更）
+  austroasiatic:    {color:'#34d399', label:'オーストロアジア語族'}, // エメラルドグリーン
+  'tai-kadai':      {color:'#2dd4bf', label:'タイ・カダイ語族'},   // ティール
+
+  // ── 中央・北アジア（黄〜琥珀）────────────────────────────────
+  mongolic:         {color:'#fbbf24', label:'モンゴル語族'},        // 琥珀
+  turkic:           {color:'#facc15', label:'テュルク語族'},        // 明黄色（暗ティール→黄に変更）
+
+  // ── 南・西アジア（橙〜琥珀）──────────────────────────────────
+  'indo-aryan':     {color:'#f59e0b', label:'インド・アーリア語族'}, // 金琥珀
+  'indo-iranian':   {color:'#d97706', label:'インド・イラン語族'}, // 深琥珀
+
+  // ── ヨーロッパ（同色相・明暗コントラスト）─────────────────────
+  romance:          {color:'#7dd3fc', label:'ロマンス語族'},        // 淡空色（薄）
+  germanic:         {color:'#1d4ed8', label:'ゲルマン語族'},        // 濃紺（同青系・明暗差大）
+  slavic:           {color:'#a855f7', label:'スラブ語族'},          // 紫（青と明確に別色相）
+  hellenic:         {color:'#06b6d4', label:'ギリシア語族'},        // シアン（ギリシア単独）
+
+  // ── 中東・北アフリカ（緑・単色）──────────────────────────────
+  semitic:          {color:'#4ade80', label:'セム語族'},            // 明緑（広大な中東・北アフリカ）
+
+  // ── サブサハラ・アフリカ（同緑系・明暗）──────────────────────
+  bantu:            {color:'#16a34a', label:'バンツー語族'},        // 濃緑（セム語族明緑と明暗差）
+  'niger-congo':    {color:'#14532d', label:'ニジェール・コンゴ語族'}, // 最深緑
+
+  // ── 参考（地図未使用〜サブデータ用）──────────────────────────
+  afroasiatic:      {color:'#65a30d', label:'アフロ・アジア語族'},
+  cushitic:         {color:'#84cc16', label:'クシ語族'},
+  dravidian:        {color:'#ef4444', label:'ドラヴィダ語族'},
+};
+
+// ── 言語・文字ネットワーク詳細 DB ─────────────────────────────────────────
+// langs: [{n:名, s:話者数(万人), o:公用語(1=yes), f:ファミリーキー}]
+// scripts: [文字名, ...]
+// links: {言語名: [使用文字, ...]}
+// note: 補足メモ
+const LANG_DETAIL_DB = {
+  392:{
+    langs:[{n:'日本語',s:12600,o:1,f:'japonic'}],
+    scripts:['漢字','平仮名','片仮名','ローマ字'],
+    links:{'日本語':['漢字','平仮名','片仮名','ローマ字']},
+    note:'漢字+仮名+ローマ字を混在使用。世界最複雑水準の文字体系（約2,000常用漢字+46×2仮名）'
+  },
+  156:{
+    langs:[{n:'普通話',s:100000,o:1,f:'sinitic'},{n:'広東語',s:8500,o:0,f:'sinitic'},{n:'閩南語',s:4800,o:0,f:'sinitic'},{n:'ウイグル語',s:1200,o:0,f:'turkic'}],
+    scripts:['簡体字','繁体字','アラビア文字','チベット文字'],
+    links:{'普通話':['簡体字'],'広東語':['繁体字','簡体字'],'閩南語':['簡体字'],'ウイグル語':['アラビア文字']},
+    note:'56民族・多言語国家。普通話（標準中国語）を全国で義務教育。少数民族言語は地域で公認'
+  },
+  410:{
+    langs:[{n:'韓国語',s:5200,o:1,f:'koreanic'}],
+    scripts:['ハングル','漢字（補助）'],
+    links:{'韓国語':['ハングル','漢字（補助）']},
+    note:'1446年世宗大王が制定したハングルは科学的音素文字。漢字は公文書等で補助的に使用'
+  },
+  496:{
+    langs:[{n:'モンゴル語',s:270,o:1,f:'mongolic'},{n:'カザフ語',s:12,o:0,f:'turkic'}],
+    scripts:['キリル文字','モンゴル文字（復活推進）'],
+    links:{'モンゴル語':['キリル文字','モンゴル文字（復活推進）'],'カザフ語':['キリル文字']},
+    note:'ソ連時代にキリル文字が導入。現在伝統的モンゴル文字への移行を政府が推進'
+  },
+  704:{
+    langs:[{n:'ベトナム語',s:8500,o:1,f:'austroasiatic'}],
+    scripts:['ローマ字（クオック・グー）'],
+    links:{'ベトナム語':['ローマ字（クオック・グー）']},
+    note:'17世紀に宣教師が考案したクオック・グー文字。声調記号付きローマ字で6声調を表現'
+  },
+  360:{
+    langs:[{n:'インドネシア語',s:22000,o:1,f:'austronesian'},{n:'ジャワ語',s:9800,o:0,f:'austronesian'},{n:'スンダ語',s:3800,o:0,f:'austronesian'}],
+    scripts:['ローマ字','ジャワ文字（伝統・補助）'],
+    links:{'インドネシア語':['ローマ字'],'ジャワ語':['ローマ字','ジャワ文字（伝統・補助）'],'スンダ語':['ローマ字']},
+    note:'700以上の言語が存在する多言語国家。インドネシア語（マレー系）が国民統合の共通語'
+  },
+  764:{
+    langs:[{n:'タイ語',s:7000,o:1,f:'tai-kadai'},{n:'南部マレー語',s:200,o:0,f:'austronesian'}],
+    scripts:['タイ文字','アラビア文字（南部）'],
+    links:{'タイ語':['タイ文字'],'南部マレー語':['アラビア文字（南部）']},
+    note:'タイ文字は13世紀スコータイ王朝制定。ブラーフミー系文字に由来。5声調をもつ'
+  },
+  458:{
+    langs:[{n:'マレー語',s:2000,o:1,f:'austronesian'},{n:'英語',s:400,o:1,f:'germanic'},{n:'中国語各方言',s:700,o:0,f:'sinitic'},{n:'タミル語',s:200,o:0,f:'dravidian'}],
+    scripts:['ローマ字','アラビア文字（Jawi）','漢字','タミル文字'],
+    links:{'マレー語':['ローマ字','アラビア文字（Jawi）'],'英語':['ローマ字'],'中国語各方言':['漢字'],'タミル語':['タミル文字']},
+    note:'マレー語・英語に加え中国語・タミル語が広く使用される多民族多言語国家'
+  },
+  608:{
+    langs:[{n:'フィリピノ語',s:9000,o:1,f:'austronesian'},{n:'英語',s:3500,o:1,f:'germanic'},{n:'セブアノ語',s:2800,o:0,f:'austronesian'}],
+    scripts:['ローマ字','バイバイン（復活中）'],
+    links:{'フィリピノ語':['ローマ字'],'英語':['ローマ字'],'セブアノ語':['ローマ字']},
+    note:'170以上の言語が存在。スペイン・米国植民地の影響でローマ字定着。古来のバイバイン文字は復活運動中'
+  },
+  702:{
+    langs:[{n:'英語',s:200,o:1,f:'germanic'},{n:'普通話',s:130,o:1,f:'sinitic'},{n:'マレー語',s:50,o:1,f:'austronesian'},{n:'タミル語',s:30,o:1,f:'dravidian'}],
+    scripts:['ローマ字','簡体字','タミル文字'],
+    links:{'英語':['ローマ字'],'普通話':['簡体字','ローマ字'],'マレー語':['ローマ字'],'タミル語':['タミル文字']},
+    note:'4言語が公用語の多言語都市国家。英語がビジネス・行政の共通語として機能'
+  },
+  104:{
+    langs:[{n:'ビルマ語',s:3500,o:1,f:'tibeto-burman'},{n:'シャン語',s:600,o:0,f:'tai-kadai'}],
+    scripts:['ビルマ文字','シャン文字'],
+    links:{'ビルマ語':['ビルマ文字'],'シャン語':['シャン文字']},
+    note:'ビルマ文字はモン文字を経由したブラーフミー系。135の民族と100以上の言語が存在'
+  },
+  356:{
+    langs:[{n:'ヒンディー語',s:60000,o:1,f:'indo-aryan'},{n:'英語',s:12500,o:1,f:'germanic'},{n:'ベンガル語',s:10000,o:0,f:'indo-aryan'},{n:'テルグ語',s:9300,o:0,f:'dravidian'},{n:'タミル語',s:7500,o:0,f:'dravidian'}],
+    scripts:['デーヴァナーガリー','ローマ字','ベンガル文字','テルグ文字','タミル文字'],
+    links:{'ヒンディー語':['デーヴァナーガリー'],'英語':['ローマ字'],'ベンガル語':['ベンガル文字'],'テルグ語':['テルグ文字'],'タミル語':['タミル文字']},
+    note:'22の指定言語と数百の言語が存在。各州が独自の州言語を持つ言語連邦国家'
+  },
+  586:{
+    langs:[{n:'ウルドゥー語',s:7000,o:1,f:'indo-aryan'},{n:'英語',s:1000,o:1,f:'germanic'},{n:'パンジャービー語',s:9000,o:0,f:'indo-aryan'},{n:'パシュトゥー語',s:3000,o:0,f:'indo-iranian'}],
+    scripts:['ナスタアリーク体','ローマ字'],
+    links:{'ウルドゥー語':['ナスタアリーク体'],'パシュトゥー語':['ナスタアリーク体'],'英語':['ローマ字']},
+    note:'ウルドゥー語はアラビア文字のナスタアリーク書体を使用。ヒンディー語と話し言葉は非常に近い'
+  },
+  50:{
+    langs:[{n:'ベンガル語',s:16000,o:1,f:'indo-aryan'}],
+    scripts:['ベンガル文字'],
+    links:{'ベンガル語':['ベンガル文字']},
+    note:'言語アイデンティティが国家形成の礎。1952年の言語運動が独立の起点。2/21は国際母語デー'
+  },
+  524:{
+    langs:[{n:'ネパール語',s:1700,o:1,f:'indo-aryan'},{n:'マイティリー語',s:340,o:0,f:'indo-aryan'}],
+    scripts:['デーヴァナーガリー','チベット文字（北部）'],
+    links:{'ネパール語':['デーヴァナーガリー'],'マイティリー語':['デーヴァナーガリー']},
+    note:'123の言語が話される。ヒマラヤ以北はチベット文字文化圏。ネパール語はヒンディー語に近い'
+  },
+  398:{
+    langs:[{n:'カザフ語',s:1400,o:1,f:'turkic'},{n:'ロシア語',s:1500,o:1,f:'slavic'}],
+    scripts:['ラテン文字（移行中）','キリル文字（現行）'],
+    links:{'カザフ語':['キリル文字（現行）','ラテン文字（移行中）'],'ロシア語':['キリル文字（現行）']},
+    note:'2025年までのラテン文字移行を政府が推進。ロシア語も公的に同等地位を持つ'
+  },
+  376:{
+    langs:[{n:'ヘブライ語',s:700,o:1,f:'semitic'},{n:'アラビア語',s:180,o:1,f:'semitic'}],
+    scripts:['ヘブライ文字（右→左）','アラビア文字（右→左）'],
+    links:{'ヘブライ語':['ヘブライ文字（右→左）'],'アラビア語':['アラビア文字（右→左）']},
+    note:'ヘブライ語は約2,000年の空白を経て20世紀に現代語として復活した史上唯一の例'
+  },
+  364:{
+    langs:[{n:'ペルシア語',s:7000,o:1,f:'indo-iranian'},{n:'アゼルバイジャン語',s:1600,o:0,f:'turkic'},{n:'クルド語',s:800,o:0,f:'indo-iranian'}],
+    scripts:['アラビア文字（ペルシア式）'],
+    links:{'ペルシア語':['アラビア文字（ペルシア式）'],'クルド語':['アラビア文字（ペルシア式）']},
+    note:'ペルシア語はアラビア文字を使用するが印欧語族（アラビア語とは異系統）。詩の文化が豊か'
+  },
+  682:{
+    langs:[{n:'アラビア語（標準）',s:2800,o:1,f:'semitic'},{n:'アラビア語（方言）',s:600,o:0,f:'semitic'}],
+    scripts:['アラビア文字（右→左）'],
+    links:{'アラビア語（標準）':['アラビア文字（右→左）'],'アラビア語（方言）':['アラビア文字（右→左）']},
+    note:'コーランの言語として宗教的権威大。現代標準語（フスハー）と口語（アンミーヤ）は大きく乖離'
+  },
+  784:{
+    langs:[{n:'アラビア語',s:100,o:1,f:'semitic'},{n:'英語',s:100,o:0,f:'germanic'},{n:'ウルドゥー語',s:120,o:0,f:'indo-aryan'},{n:'ヒンディー語',s:100,o:0,f:'indo-aryan'}],
+    scripts:['アラビア文字','ローマ字','ナスタアリーク体'],
+    links:{'アラビア語':['アラビア文字'],'英語':['ローマ字'],'ウルドゥー語':['ナスタアリーク体'],'ヒンディー語':['デーヴァナーガリー']},
+    note:'人口の約88%が外国人労働者。英語・ウルドゥー・ヒンディーが実質的な日常語'
+  },
+  368:{
+    langs:[{n:'アラビア語',s:2400,o:1,f:'semitic'},{n:'クルド語',s:600,o:1,f:'indo-iranian'}],
+    scripts:['アラビア文字','ラテン文字（クルド補助）'],
+    links:{'アラビア語':['アラビア文字'],'クルド語':['アラビア文字','ラテン文字（クルド補助）']},
+    note:'クルド自治区では独自行政。クルド語の文字は国・地域によりアラビア文字/ラテン文字に分かれる'
+  },
+  400:{
+    langs:[{n:'アラビア語',s:1000,o:1,f:'semitic'}],
+    scripts:['アラビア文字（右→左）'],
+    links:{'アラビア語':['アラビア文字（右→左）']},
+    note:'ヨルダン・アラビア語（レバント方言）を話す。英語がビジネスで広く使われる'
+  },
+  792:{
+    langs:[{n:'トルコ語',s:7500,o:1,f:'turkic'},{n:'クルド語',s:1500,o:0,f:'indo-iranian'}],
+    scripts:['ラテン文字（1928〜）'],
+    links:{'トルコ語':['ラテン文字（1928〜）'],'クルド語':['ラテン文字（1928〜）']},
+    note:'アタテュルクが1928年にアラビア文字からラテン文字へ大改革。今でも政治的象徴性が高い'
+  },
+  826:{
+    langs:[{n:'英語',s:6000,o:1,f:'germanic'},{n:'ウェールズ語',s:60,o:1,f:'celtic'},{n:'スコットランド・ゲール語',s:6,o:0,f:'celtic'}],
+    scripts:['ローマ字'],
+    links:{'英語':['ローマ字'],'ウェールズ語':['ローマ字'],'スコットランド・ゲール語':['ローマ字']},
+    note:'英語は世界で約15億人が使用。ウェールズ語はケルト語系の現役生存言語で標識も二言語併記'
+  },
+  250:{
+    langs:[{n:'フランス語',s:6800,o:1,f:'romance'},{n:'アルザス語',s:90,o:0,f:'germanic'},{n:'ブルトン語',s:20,o:0,f:'celtic'}],
+    scripts:['ローマ字'],
+    links:{'フランス語':['ローマ字'],'アルザス語':['ローマ字'],'ブルトン語':['ローマ字']},
+    note:'アカデミー・フランセーズが語彙を守護。外来語の排除で有名。ラテン語の直系'
+  },
+  276:{
+    langs:[{n:'ドイツ語',s:8300,o:1,f:'germanic'},{n:'低地ドイツ語',s:200,o:0,f:'germanic'},{n:'フリジア語',s:25,o:0,f:'germanic'}],
+    scripts:['ローマ字','フラクトゥール（歴史）'],
+    links:{'ドイツ語':['ローマ字'],'低地ドイツ語':['ローマ字'],'フリジア語':['ローマ字']},
+    note:'文法は複雑（格変化4格）だが語彙は英語に近い。かつてはゴシック体（フラクトゥール）を使用'
+  },
+  380:{
+    langs:[{n:'イタリア語',s:6500,o:1,f:'romance'},{n:'シチリア語',s:500,o:0,f:'romance'},{n:'ドイツ語（南チロル）',s:30,o:0,f:'germanic'}],
+    scripts:['ローマ字'],
+    links:{'イタリア語':['ローマ字'],'シチリア語':['ローマ字'],'ドイツ語（南チロル）':['ローマ字']},
+    note:'ラテン語の最も直接の子孫。ダンテが用いたトスカーナ語が標準語の基盤。地域方言差が大きい'
+  },
+  724:{
+    langs:[{n:'スペイン語',s:4700,o:1,f:'romance'},{n:'カタルーニャ語',s:1000,o:0,f:'romance'},{n:'バスク語',s:80,o:0,f:'basque'}],
+    scripts:['ローマ字'],
+    links:{'スペイン語':['ローマ字'],'カタルーニャ語':['ローマ字'],'バスク語':['ローマ字']},
+    note:'バスク語（エウスカラ）は他の言語と系統関係のない孤立語。スペイン語は世界第2位の母語話者数（約5億人）'
+  },
+  528:{
+    langs:[{n:'オランダ語',s:1700,o:1,f:'germanic'},{n:'フリジア語',s:50,o:0,f:'germanic'}],
+    scripts:['ローマ字'],
+    links:{'オランダ語':['ローマ字'],'フリジア語':['ローマ字']},
+    note:'オランダ語はアフリカーンス語（南ア）の祖先。英語に最も近いゲルマン語のひとつ'
+  },
+  752:{
+    langs:[{n:'スウェーデン語',s:1000,o:1,f:'germanic'}],
+    scripts:['ローマ字'],
+    links:{'スウェーデン語':['ローマ字']},
+    note:'北ゲルマン語。ノルウェー語・デンマーク語と相互理解可能。英語普及率が非常に高い'
+  },
+  578:{
+    langs:[{n:'ブークモール',s:450,o:1,f:'germanic'},{n:'ニーノシュク',s:50,o:1,f:'germanic'},{n:'北サーミ語',s:2,o:0,f:'uralic'}],
+    scripts:['ローマ字'],
+    links:{'ブークモール':['ローマ字'],'ニーノシュク':['ローマ字'],'北サーミ語':['ローマ字']},
+    note:'書き言葉が2種（ブークモール＝書物の言葉、ニーノシュク＝新ノルウェー語）という特殊言語状況'
+  },
+  616:{
+    langs:[{n:'ポーランド語',s:4400,o:1,f:'slavic'}],
+    scripts:['ローマ字（拡張：Ł・Ś等）'],
+    links:{'ポーランド語':['ローマ字（拡張：Ł・Ś等）']},
+    note:'スラブ語だがローマカトリックの影響でラテン文字を採用。ロシア語・チェコ語と部分的に相互理解可'
+  },
+  804:{
+    langs:[{n:'ウクライナ語',s:3700,o:1,f:'slavic'},{n:'ロシア語',s:1400,o:0,f:'slavic'}],
+    scripts:['キリル文字（ウクライナ版）'],
+    links:{'ウクライナ語':['キリル文字（ウクライナ版）'],'ロシア語':['キリル文字（ウクライナ版）']},
+    note:'2022年以降ウクライナ語のアイデンティティが強化。ウクライナ語とロシア語は別言語だが近縁'
+  },
+  300:{
+    langs:[{n:'ギリシア語',s:1100,o:1,f:'hellenic'}],
+    scripts:['ギリシア文字'],
+    links:{'ギリシア語':['ギリシア文字']},
+    note:'ギリシア文字はアルファベットの元祖。現代ギリシア語は古典語から2,500年以上継続'
+  },
+  40:{
+    langs:[{n:'ドイツ語（オーストリア方言）',s:850,o:1,f:'germanic'}],
+    scripts:['ローマ字'],
+    links:{'ドイツ語（オーストリア方言）':['ローマ字']},
+    note:'ドイツ語の主要変種だが発音・語彙・表現でドイツ本国と差があり独自言語意識も強い'
+  },
+  756:{
+    langs:[{n:'ドイツ語（スイス）',s:500,o:1,f:'germanic'},{n:'フランス語',s:200,o:1,f:'romance'},{n:'イタリア語',s:70,o:1,f:'romance'},{n:'ロマンシュ語',s:4,o:1,f:'romance'}],
+    scripts:['ローマ字'],
+    links:{'ドイツ語（スイス）':['ローマ字'],'フランス語':['ローマ字'],'イタリア語':['ローマ字'],'ロマンシュ語':['ローマ字']},
+    note:'4言語公用語の多言語連邦国家。ロマンシュ語は話者わずか4万人でも公用語に指定'
+  },
+  643:{
+    langs:[{n:'ロシア語',s:15000,o:1,f:'slavic'},{n:'タタール語',s:530,o:0,f:'turkic'},{n:'チェチェン語',s:200,o:0,f:'nakh'}],
+    scripts:['キリル文字'],
+    links:{'ロシア語':['キリル文字'],'タタール語':['キリル文字'],'チェチェン語':['キリル文字']},
+    note:'キリル文字はロシア語の象徴。多くの旧ソ連言語が現在もキリル文字を使用'
+  },
+  818:{
+    langs:[{n:'アラビア語（エジプト）',s:10000,o:1,f:'semitic'}],
+    scripts:['アラビア文字'],
+    links:{'アラビア語（エジプト）':['アラビア文字']},
+    note:'エジプト・アラビア語は映画・音楽の普及でアラブ世界で最も広く理解される方言'
+  },
+  504:{
+    langs:[{n:'アラビア語（ダリジャ）',s:3200,o:1,f:'semitic'},{n:'タマジヒト（ベルベル語）',s:800,o:1,f:'afroasiatic'},{n:'フランス語',s:1000,o:0,f:'romance'}],
+    scripts:['アラビア文字','ティフナグ文字','ローマ字'],
+    links:{'アラビア語（ダリジャ）':['アラビア文字'],'タマジヒト（ベルベル語）':['ティフナグ文字'],'フランス語':['ローマ字']},
+    note:'アラビア語とベルベル語が公用語。ダリジャ（口語）は標準アラビア語と大きく異なる'
+  },
+  566:{
+    langs:[{n:'英語',s:8000,o:1,f:'germanic'},{n:'ハウサ語',s:7500,o:0,f:'afroasiatic'},{n:'ヨルバ語',s:5000,o:0,f:'niger-congo'},{n:'イボ語',s:3400,o:0,f:'niger-congo'}],
+    scripts:['ローマ字','アジャミ文字（補助）'],
+    links:{'英語':['ローマ字'],'ハウサ語':['ローマ字','アジャミ文字（補助）'],'ヨルバ語':['ローマ字'],'イボ語':['ローマ字']},
+    note:'500以上の言語が存在。英語が統合のための公用語。ハウサ語はアフリカ最多話者言語のひとつ'
+  },
+  231:{
+    langs:[{n:'アムハラ語',s:3400,o:1,f:'semitic'},{n:'オロモ語',s:4500,o:0,f:'cushitic'},{n:'ティグリニャ語',s:900,o:0,f:'semitic'}],
+    scripts:['エチオピア文字（ゲエズ）','ローマ字（補助）'],
+    links:{'アムハラ語':['エチオピア文字（ゲエズ）'],'ティグリニャ語':['エチオピア文字（ゲエズ）'],'オロモ語':['ローマ字（補助）']},
+    note:'エチオピア文字（ゲエズ文字）は2,000年以上の歴史を持つアフリカ固有の文字体系（子音+母音一体型）'
+  },
+  404:{
+    langs:[{n:'スワヒリ語',s:4700,o:1,f:'bantu'},{n:'英語',s:600,o:1,f:'germanic'},{n:'キクユ語',s:800,o:0,f:'bantu'}],
+    scripts:['ローマ字'],
+    links:{'スワヒリ語':['ローマ字'],'英語':['ローマ字'],'キクユ語':['ローマ字']},
+    note:'スワヒリ語はアラビア語との混交で発展した東アフリカ共通語。東アフリカ共同体6カ国で使用'
+  },
+  710:{
+    langs:[{n:'ズールー語',s:1200,o:1,f:'bantu'},{n:'コサ語',s:900,o:1,f:'bantu'},{n:'アフリカーンス語',s:700,o:1,f:'germanic'},{n:'英語',s:500,o:1,f:'germanic'}],
+    scripts:['ローマ字'],
+    links:{'ズールー語':['ローマ字'],'コサ語':['ローマ字'],'アフリカーンス語':['ローマ字'],'英語':['ローマ字']},
+    note:'11の公用語を持つ世界最多言語国家のひとつ。アフリカーンス語はオランダ語の子孫'
+  },
+  840:{
+    langs:[{n:'英語',s:27000,o:0,f:'germanic'},{n:'スペイン語',s:4500,o:0,f:'romance'},{n:'中国語',s:350,o:0,f:'sinitic'}],
+    scripts:['ローマ字'],
+    links:{'英語':['ローマ字'],'スペイン語':['ローマ字'],'中国語':['ローマ字']},
+    note:'連邦レベルの公用語規定なし（英語が事実上の国語）。スペイン語話者が急増中（約5,000万人）'
+  },
+  124:{
+    langs:[{n:'英語',s:2100,o:1,f:'germanic'},{n:'フランス語',s:800,o:1,f:'romance'}],
+    scripts:['ローマ字'],
+    links:{'英語':['ローマ字'],'フランス語':['ローマ字']},
+    note:'英仏二言語連邦国家。ケベック州ではフランス語が唯一の公用語。標識・商品表示も二言語義務'
+  },
+  484:{
+    langs:[{n:'スペイン語',s:12000,o:1,f:'romance'},{n:'ナワトル語',s:170,o:0,f:'uto-aztecan'},{n:'ユカテカ・マヤ語',s:90,o:0,f:'mayan'}],
+    scripts:['ローマ字'],
+    links:{'スペイン語':['ローマ字'],'ナワトル語':['ローマ字'],'ユカテカ・マヤ語':['ローマ字']},
+    note:'スペイン語の最大話者国。先住民語68言語が公認。マヤ・アステカ文化が現在も根付く'
+  },
+  76:{
+    langs:[{n:'ポルトガル語（ブラジル）',s:21000,o:1,f:'romance'}],
+    scripts:['ローマ字'],
+    links:{'ポルトガル語（ブラジル）':['ローマ字']},
+    note:'ポルトガル語世界最大の話者国（2億人超）。欧州ポルトガル語とは発音・語彙に差がある'
+  },
+  32:{
+    langs:[{n:'スペイン語（リオプラテンセ）',s:4500,o:1,f:'romance'},{n:'イタリア語系（移民）',s:100,o:0,f:'romance'}],
+    scripts:['ローマ字'],
+    links:{'スペイン語（リオプラテンセ）':['ローマ字'],'イタリア語系（移民）':['ローマ字']},
+    note:'イタリア移民の影響でスペイン語にイタリア語的な強勢。「vos」（あなた）が特徴的'
+  },
+  152:{
+    langs:[{n:'スペイン語（チリ）',s:1900,o:1,f:'romance'},{n:'マプドゥング語',s:25,o:0,f:'araucanian'}],
+    scripts:['ローマ字'],
+    links:{'スペイン語（チリ）':['ローマ字'],'マプドゥング語':['ローマ字']},
+    note:'チリのスペイン語は語末子音の省略など独特の訛り。マプーチェ民族の言語マプドゥングは2025年現在も使用'
+  },
+  170:{
+    langs:[{n:'スペイン語（コロンビア）',s:5000,o:1,f:'romance'}],
+    scripts:['ローマ字'],
+    links:{'スペイン語（コロンビア）':['ローマ字']},
+    note:'ボゴタ方言が「最も純粋なスペイン語」とも評される。カスティーリャ語の古典的発音が残存'
+  },
+  36:{
+    langs:[{n:'英語',s:2100,o:0,f:'germanic'},{n:'普通話',s:60,o:0,f:'sinitic'}],
+    scripts:['ローマ字'],
+    links:{'英語':['ローマ字'],'普通話':['ローマ字']},
+    note:'連邦レベルの公用語指定なし（英語が事実上の国語）。先住民語250以上が絶滅の危機'
+  },
+  554:{
+    langs:[{n:'英語',s:450,o:1,f:'germanic'},{n:'マオリ語',s:7,o:1,f:'austronesian'}],
+    scripts:['ローマ字'],
+    links:{'英語':['ローマ字'],'マオリ語':['ローマ字']},
+    note:'マオリ語と手話も公用語。マオリの地名・文化用語が日常に浸透。手話が公用語の稀な国'
+  },
+};
+
 // ── 地域別最低賃金（2025年10月04日改定・checker.py 取得） ──────────────────
 let MINWAGE_JP = {
   '北海道':1075,'青森':1029,'岩手':1031,'宮城':1038,'秋田':1031,
@@ -3017,6 +3437,21 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .attr('stroke', 'none')
       .attr('pointer-events', 'none') // クリック・ホバーは下の国パスに貫通
       .style('display', 'none'); // デフォルト非表示（🔒ボタンで切替）
+
+    // ── 言語ファミリーオーバーレイ（🌐ボタンで切替） ──────────────────────
+    g.selectAll('.lang-overlay')
+      .data(countries.features.filter(d => LANG_FAMILY_MAP[+d.id]))
+      .enter().append('path')
+      .attr('class', 'lang-overlay')
+      .attr('d', pathGen)
+      .attr('fill', d => {
+        const fam = LANG_FAMILY_MAP[+d.id];
+        return (LANG_FAMILY_META[fam] || {color:'transparent'}).color;
+      })
+      .attr('fill-opacity', 0.50)
+      .attr('stroke', 'none')
+      .attr('pointer-events', 'none')
+      .style('display', 'none');
   });
 
 let currentTab = 0;
@@ -3046,9 +3481,145 @@ function toggleCensor(){
   d3.selectAll('.censor-overlay').style('display', censorOn ? null : 'none');
 }
 
+let langOn = false;
+function toggleLang(){
+  langOn = !langOn;
+  const btn = document.getElementById('lang-toggle-btn');
+  const legend = document.getElementById('lang-legend');
+  if(btn) btn.classList.toggle('active', langOn);
+  if(legend) legend.style.display = langOn ? 'block' : 'none';
+  d3.selectAll('.lang-overlay').style('display', langOn ? null : 'none');
+}
+
 function card(icon, title, body, badge){
   const b = badge ? `<span class="badge ${badge==='univ'?'univ':'vary'}">${badge==='univ'?'普遍':'国別'}</span>` : '';
   return `<div class="card"><div class="card-title">${icon} ${title}${b}</div><div class="card-body">${body}</div></div>`;
+}
+
+// ── 言語・文字ネットワーク HTML生成 ────────────────────────────────────────
+function buildLangNetwork(countryId){
+  const ld = LANG_DETAIL_DB[countryId];
+  const fam = LANG_FAMILY_MAP[countryId];
+  const famMeta = LANG_FAMILY_META[fam] || {color:'#94a3b8', label:'—'};
+  const info = DB[countryId];
+  if(!ld) return card('🗣','言語', info ? info.lang : '—');
+
+  return `<div class="card" style="grid-column:1/-1">
+    <div class="card-title" style="display:flex;align-items:center;gap:8px">
+      🔤 言語・文字ネットワーク
+      <span style="font-size:10px;font-weight:400;padding:2px 7px;border-radius:20px;background:${famMeta.color}22;border:1px solid ${famMeta.color}55;color:${famMeta.color}">${famMeta.label}</span>
+    </div>
+    <div id="lang-net-svg-wrap" style="width:100%;overflow:hidden;border-radius:6px;background:rgba(255,255,255,0.03);margin-bottom:6px"></div>
+    <div style="font-size:11px;color:var(--tx3);line-height:1.6">${ld.note}</div>
+  </div>`;
+}
+
+// ── 言語ネットワーク D3 描画（innerHTML設定後に呼ぶ） ──────────────────────
+function renderLangNetwork(countryId){
+  const ld = LANG_DETAIL_DB[countryId];
+  const wrap = document.getElementById('lang-net-svg-wrap');
+  if(!ld || !wrap) return;
+
+  const SCRIPT_COLOR = '#38bdf8';
+  const LANG_COLORS = LANG_FAMILY_META;
+  const langs   = ld.langs;
+  const scripts  = ld.scripts;
+
+  const W = wrap.clientWidth || 320;
+  const rowH = 34;
+  const nRows = Math.max(langs.length, scripts.length);
+  const H = Math.max(nRows * rowH + 36, 80);
+
+  const svg = d3.select(wrap).append('svg')
+    .attr('width', W).attr('height', H)
+    .attr('style', 'display:block');
+
+  const LANG_X  = 8;
+  const SCR_X   = W - 8;
+  const MID_X   = W / 2;
+
+  // 言語ノード Y 座標
+  const langY = (i) => 22 + i * rowH + (nRows - langs.length) * rowH / 2;
+  // 文字ノード Y 座標
+  const scrY  = (i) => 22 + i * rowH + (nRows - scripts.length) * rowH / 2;
+
+  // スクリプト名 → インデックス
+  const scrIdx = {};
+  scripts.forEach((s, i) => { scrIdx[s] = i; });
+
+  // ── エッジ（ベジェ曲線）────────────────────────────────────────────────
+  langs.forEach((lang, li) => {
+    const targets = ld.links[lang.n] || [];
+    const fc = (LANG_COLORS[lang.f] || {color:'#94a3b8'}).color;
+    targets.forEach(sc => {
+      const si = scrIdx[sc];
+      if(si === undefined) return;
+      const x1 = LANG_X + 72, y1 = langY(li);
+      const x2 = SCR_X - 72, y2 = scrY(si);
+      const cx = MID_X;
+      svg.append('path')
+        .attr('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
+        .attr('fill','none')
+        .attr('stroke', fc)
+        .attr('stroke-width', 1.3)
+        .attr('stroke-opacity', 0.32);
+    });
+  });
+
+  // ── 言語ノード（左列）────────────────────────────────────────────────
+  langs.forEach((lang, i) => {
+    const cy = langY(i);
+    const fc = (LANG_COLORS[lang.f] || {color:'#94a3b8'}).color;
+    const bg = fc + '28';
+    const bd = fc + '80';
+
+    const grp = svg.append('g').attr('transform', `translate(0,${cy})`);
+    const labelW = Math.min(W * 0.35, 130);
+    grp.append('rect')
+      .attr('x', LANG_X).attr('y', -13)
+      .attr('width', labelW).attr('height', 26)
+      .attr('rx', 13).attr('fill', bg).attr('stroke', bd).attr('stroke-width', 1);
+    // 公用語マーク
+    if(lang.o){
+      grp.append('circle').attr('cx', LANG_X + 10).attr('cy', 0).attr('r', 5)
+        .attr('fill', fc);
+    }
+    grp.append('text')
+      .attr('x', lang.o ? LANG_X + 20 : LANG_X + 8).attr('y', 4.5)
+      .attr('font-size', 10.5).attr('fill', fc).attr('font-weight', '600')
+      .text(lang.n.length > 9 ? lang.n.slice(0,9)+'…' : lang.n);
+    // 話者数
+    if(lang.s){
+      const sLabel = lang.s >= 10000 ? (lang.s/10000).toFixed(1)+'億' : lang.s >= 1000 ? (lang.s/1000).toFixed(1)+'千万' : lang.s+'万';
+      grp.append('text')
+        .attr('x', LANG_X + labelW + 3).attr('y', 4.5)
+        .attr('font-size', 9).attr('fill','#64748b')
+        .text(sLabel);
+    }
+  });
+
+  // ── 文字ノード（右列）────────────────────────────────────────────────
+  scripts.forEach((sc, i) => {
+    const cy = scrY(i);
+    const grp = svg.append('g').attr('transform', `translate(${SCR_X},${cy})`);
+    const labelW = Math.min(W * 0.35, 130);
+    grp.append('rect')
+      .attr('x', -labelW).attr('y', -12)
+      .attr('width', labelW).attr('height', 24)
+      .attr('rx', 4).attr('fill','rgba(56,189,248,0.12)').attr('stroke','rgba(56,189,248,0.40)').attr('stroke-width', 1);
+    grp.append('text')
+      .attr('x', -labelW / 2).attr('y', 4.5)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 10).attr('fill', SCRIPT_COLOR).attr('font-weight', '500')
+      .text(sc.length > 10 ? sc.slice(0,10)+'…' : sc);
+  });
+
+  // ── 凡例（下部中央）──────────────────────────────────────────────────
+  const legY = H - 10;
+  svg.append('circle').attr('cx', MID_X - 38).attr('cy', legY - 3).attr('r', 4).attr('fill','#a78bfa');
+  svg.append('text').attr('x', MID_X - 31).attr('y', legY).attr('font-size', 9).attr('fill','#64748b').text('● 公用語');
+  svg.append('rect').attr('x', MID_X + 2).attr('y', legY - 7).attr('width', 12).attr('height', 8).attr('rx',2).attr('fill','rgba(56,189,248,0.18)').attr('stroke','rgba(56,189,248,0.5)').attr('stroke-width',1);
+  svg.append('text').attr('x', MID_X + 17).attr('y', legY).attr('font-size', 9).attr('fill','#64748b').text('文字');
 }
 
 function renderCards(info, tab){
@@ -3074,9 +3645,10 @@ function renderCards(info, tab){
       card('🍚','食文化', info.food) +
       card('🏠','生活習慣', info.life) +
       card('🕌','宗教・価値観', info.religion) +
-      card('🗣','言語', info.lang) +
+      buildLangNetwork(currentCountryId) +
       card('🏛','政治の仕組み', info.politics) +
       _cCard;
+    renderLangNetwork(currentCountryId);
   } else if(tab === 1){
     if(!info.comm){ pb.innerHTML='<div class="no-data">このセクションは準備中です</div>'; return; }
     const c = info.comm;
