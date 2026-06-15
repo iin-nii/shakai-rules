@@ -2,9 +2,32 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 
+const BASE_URL = "https://shakai-rules.vercel.app";
+
 export const metadata: Metadata = {
-  title: "社会のトリセツ | 誰も教えてくれなかった社会のルール",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "社会のトリセツ | 誰も教えてくれなかった社会のルール",
+    template: "%s | 社会のトリセツ",
+  },
   description: "言葉遣い・給与・マナーなど、学校では教えてくれなかった社会のルールをクイズで楽しく学べるサイトです。",
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    url: BASE_URL,
+    siteName: "社会のトリセツ",
+    title: "社会のトリセツ | 誰も教えてくれなかった社会のルール",
+    description: "言葉遣い・給与・マナーなど、学校では教えてくれなかった社会のルールをクイズで楽しく学べるサイトです。",
+  },
+  twitter: {
+    card: "summary",
+    title: "社会のトリセツ",
+    description: "学校では教えてくれなかった社会のルールをクイズで学ぶ。",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
