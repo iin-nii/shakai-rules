@@ -10,6 +10,7 @@ import time
 import threading
 import subprocess
 import logging
+import socket
 from pathlib import Path
 
 from watchdog.observers import Observer
@@ -17,13 +18,22 @@ from watchdog.events import FileSystemEventHandler
 
 BASE_DIR = Path(__file__).parent
 
+# ── 二重起動防止（同一ポートをバインドできるのは1プロセスだけ） ──────────
+_LOCK_PORT = 47832
+try:
+    _lock_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    _lock_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+    _lock_sock.bind(("127.0.0.1", _LOCK_PORT))
+except OSError:
+    print("別のウォッチャーが既に起動しています。このプロセスを終了します。")
+    sys.exit(0)
+
 # 監視対象ディレクトリと拡張子
 WATCH_TARGETS = [
     (BASE_DIR / "public",   {".html"},        False),   # public/ html のみ 非再帰
     (BASE_DIR / "app",      {".tsx", ".ts"},  True),    # app/ tsx/ts 再帰
 ]
 
-# 除外パターン（node_modules は watchdog の schedule 対象外なので基本不要だが念のため）
 EXCLUDE_DIRS = {"node_modules", ".next", ".git", "__pycache__"}
 
 logging.basicConfig(
@@ -39,30 +49,34 @@ logging.basicConfig(
 _timers: dict[str, threading.Timer] = {}
 DEBOUNCE_SEC = 3.0
 
+# git操作を直列化するロック（同時実行によるindex.lock競合を防ぐ）
+_git_lock = threading.Lock()
+
 
 def git_push(filepath: Path):
     rel = filepath.relative_to(BASE_DIR)
     logging.info(f"変更検知: {rel} → git push 開始")
-    try:
-        subprocess.run(
-            ["git", "add", str(rel)],
-            cwd=BASE_DIR, check=True, capture_output=True
-        )
-        msg = f"[自動] {rel.name} を更新"
-        result = subprocess.run(
-            ["git", "commit", "-m", msg],
-            cwd=BASE_DIR, capture_output=True, text=True
-        )
-        if "nothing to commit" in result.stdout:
-            logging.info("差分なし、pushをスキップ")
-            return
-        subprocess.run(
-            ["git", "push"],
-            cwd=BASE_DIR, check=True, capture_output=True
-        )
-        logging.info(f"push完了: {msg}")
-    except subprocess.CalledProcessError as e:
-        logging.error(f"gitエラー: {e.stderr or e}")
+    with _git_lock:
+        try:
+            subprocess.run(
+                ["git", "add", str(rel)],
+                cwd=BASE_DIR, check=True, capture_output=True
+            )
+            msg = f"[自動] {rel.name} を更新"
+            result = subprocess.run(
+                ["git", "commit", "-m", msg],
+                cwd=BASE_DIR, capture_output=True, text=True
+            )
+            if "nothing to commit" in result.stdout:
+                logging.info("差分なし、pushをスキップ")
+                return
+            subprocess.run(
+                ["git", "push"],
+                cwd=BASE_DIR, check=True, capture_output=True
+            )
+            logging.info(f"push完了: {msg}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"gitエラー: {e.stderr or e}")
 
 
 class FileHandler(FileSystemEventHandler):
