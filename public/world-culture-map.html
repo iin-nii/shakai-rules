@@ -57,7 +57,14 @@ svg#map:active { cursor:grabbing; }
 .country.r-centralasia{ fill:#30281a; }
 
 .country.has-data:hover { filter:brightness(1.3); }
-.country.active { fill:#38bdf8 !important; filter:none; }
+/* 選択国: 塗り色は変えず外枠をゴールドで強調 + グロー */
+.country.active {
+  stroke: #facc15 !important;          /* 黄金色の外枠 — どの色の上でも見える */
+  stroke-width: 2.5px !important;
+  paint-order: stroke fill;             /* 枠を fill の外側に描く */
+  filter: drop-shadow(0 0 4px rgba(250,204,21,0.85))
+          drop-shadow(0 0 8px rgba(250,204,21,0.45)) !important;
+}
 
 /* ── ツールチップ ── */
 #tooltip {
@@ -3449,7 +3456,19 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         return (LANG_FAMILY_META[fam] || {color:'transparent'}).color;
       })
       .attr('fill-opacity', 0.50)
-      .attr('stroke', 'none')
+      .attr('stroke', 'rgba(0,0,0,0.45)')  // 国境線を細く表示
+      .attr('stroke-width', 0.6)
+      .attr('pointer-events', 'none')
+      .style('display', 'none');
+
+    // ── 言語オーバーレイ専用の国境メッシュ（全国境を上に重ねて常に見せる）──
+    g.append('path')
+      .attr('class', 'lang-border-mesh')
+      .datum(topojson.mesh(world, world.objects.countries, (a,b) => a !== b))
+      .attr('d', pathGen)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(255,255,255,0.18)')
+      .attr('stroke-width', 0.5)
       .attr('pointer-events', 'none')
       .style('display', 'none');
   });
@@ -3489,6 +3508,7 @@ function toggleLang(){
   if(btn) btn.classList.toggle('active', langOn);
   if(legend) legend.style.display = langOn ? 'block' : 'none';
   d3.selectAll('.lang-overlay').style('display', langOn ? null : 'none');
+  d3.selectAll('.lang-border-mesh').style('display', langOn ? null : 'none');
 }
 
 function card(icon, title, body, badge){
