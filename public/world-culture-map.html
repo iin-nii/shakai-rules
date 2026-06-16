@@ -4650,7 +4650,7 @@ function renderChinaMap(){
   const svgEl = document.getElementById('china-svg');
   if(!svgEl) return;
   if(_cnTopo){ _drawChinaMap(_cnTopo); return; }
-  fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/china/china-provinces.json')
+  fetch('https://cdn.jsdelivr.net/gh/deldersveld/topojson@master/countries/china/china-provinces.json')
     .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
     .then(topo => { _cnTopo = topo; _drawChinaMap(topo); })
     .catch(() => {
