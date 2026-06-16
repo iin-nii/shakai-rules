@@ -215,67 +215,67 @@ const POSITIVE_SECTIONS = [
   {
     title: "ポリフェノール類",
     items: [
-      { name: "フラボノイド全般" },
-      { name: "カテキン", note: "緑茶" },
-      { name: "レスベラトロール", note: "赤ワイン" },
-      { name: "アントシアニン", note: "ベリー類" },
-      { name: "ルチン", note: "ソバ" },
-      { name: "クロロゲン酸", note: "コーヒー" },
-      { name: "ケルセチン", note: "玉ねぎ" },
-      { name: "イソフラボン", note: "大豆" },
-      { name: "カカオフラバノール", note: "チョコレート" },
+      { name: "フラボノイド全般", note: "", effect: "抗酸化・抗炎症・毛細血管強化" },
+      { name: "カテキン", note: "緑茶", effect: "抗菌・脂肪燃焼促進・血糖上昇抑制" },
+      { name: "レスベラトロール", note: "赤ワイン", effect: "心臓保護・サーチュイン（長寿遺伝子）活性化" },
+      { name: "アントシアニン", note: "ベリー類", effect: "視力改善・毛細血管強化・循環改善" },
+      { name: "ルチン", note: "ソバ", effect: "毛細血管強化・血圧低下・ビタミンC節約効果" },
+      { name: "クロロゲン酸", note: "コーヒー", effect: "食後血糖上昇抑制・脂肪燃焼・抗酸化" },
+      { name: "ケルセチン", note: "玉ねぎ", effect: "抗炎症・抗アレルギー（ヒスタミン抑制）" },
+      { name: "イソフラボン", note: "大豆", effect: "女性ホルモン様作用・骨密度維持・更年期症状緩和" },
+      { name: "カカオフラバノール", note: "チョコレート", effect: "血流改善・認知機能改善・血圧低下" },
     ],
   },
   {
     title: "カロテノイド類",
     items: [
-      { name: "β-カロテン", note: "Pro-Vit A" },
-      { name: "リコピン", note: "トマト" },
-      { name: "ルテイン / ゼアキサンチン", note: "目の健康" },
-      { name: "アスタキサンチン", note: "サーモン" },
+      { name: "β-カロテン", note: "Pro-Vit A", effect: "抗酸化・免疫強化・皮膚・粘膜の保護（体内でビタミンAに変換）" },
+      { name: "リコピン", note: "トマト", effect: "強力抗酸化・前立腺がんリスク低下・紫外線ダメージ軽減" },
+      { name: "ルテイン / ゼアキサンチン", note: "目", effect: "黄斑変性予防・ブルーライト吸収・白内障リスク低下" },
+      { name: "アスタキサンチン", note: "サーモン", effect: "β-カロテンの約40倍の抗酸化力・疲労回復・皮膚老化抑制" },
     ],
   },
   {
     title: "食物繊維",
     items: [
-      { name: "水溶性", note: "ペクチン・β-グルカン" },
-      { name: "不溶性", note: "セルロース" },
-      { name: "レジスタントスターチ" },
+      { name: "水溶性", note: "ペクチン・β-グルカン", effect: "血糖上昇緩和・LDLコレステロール低下・腸内善玉菌の餌" },
+      { name: "不溶性", note: "セルロース", effect: "便通改善・腸内環境整備・大腸がんリスク低下" },
+      { name: "レジスタントスターチ", note: "", effect: "腸内善玉菌の餌・食後血糖値抑制・腹持ち向上" },
     ],
   },
   {
     title: "プロバイオティクス・プレバイオティクス",
     items: [
-      { name: "乳酸菌 / ビフィズス菌" },
-      { name: "FOS・GOS", note: "腸内細菌の餌" },
+      { name: "乳酸菌 / ビフィズス菌", note: "", effect: "腸内環境改善・免疫調節・アレルギー緩和・腸脳軸経由でメンタル改善" },
+      { name: "FOS・GOS", note: "腸内細菌の餌", effect: "善玉菌の増殖促進・便通改善・ミネラル吸収促進" },
     ],
   },
   {
     title: "機能性脂質",
     items: [
-      { name: "EPA / DHA", note: "ω-3 / 魚油" },
-      { name: "オレイン酸", note: "オリーブ油" },
-      { name: "共役リノール酸（CLA）" },
+      { name: "EPA / DHA", note: "ω-3 / 魚油", effect: "中性脂肪低下・抗炎症・認知機能維持・うつ予防" },
+      { name: "オレイン酸", note: "オリーブ油", effect: "LDLコレステロール低下・心臓病リスク低下・動脈硬化予防" },
+      { name: "共役リノール酸（CLA）", note: "", effect: "体脂肪低下・筋肉量維持・免疫調節" },
     ],
   },
   {
     title: "その他生理活性成分",
     items: [
-      { name: "コエンザイムQ10" },
-      { name: "α-リポ酸" },
-      { name: "L-カルニチン" },
-      { name: "グルタチオン" },
-      { name: "タウリン" },
-      { name: "クレアチン" },
-      { name: "コリン", note: "条件付き必須寄り" },
-      { name: "イノシトール" },
-      { name: "テアニン", note: "緑茶" },
-      { name: "カフェイン", note: "覚醒・代謝促進" },
-      { name: "クルクミン", note: "ターメリック" },
-      { name: "スルフォラファン", note: "ブロッコリー" },
-      { name: "アリシン", note: "ニンニク" },
-      { name: "βグルカン", note: "キノコ・免疫" },
-      { name: "フィチン酸", note: "抗酸化（二面性）" },
+      { name: "コエンザイムQ10", note: "", effect: "ミトコンドリアでのエネルギー産生補助・抗酸化・心臓機能サポート" },
+      { name: "α-リポ酸", note: "", effect: "水溶性・脂溶性両方で機能する強力抗酸化・血糖コントロール・神経保護" },
+      { name: "L-カルニチン", note: "", effect: "脂肪酸をミトコンドリアへ運搬→脂肪燃焼効率化・疲労回復" },
+      { name: "グルタチオン", note: "", effect: "体内最強の抗酸化物質・解毒（肝臓）・免疫強化・美白（メラニン抑制）" },
+      { name: "タウリン", note: "", effect: "心臓機能改善・胆汁酸合成・神経保護・疲労回復・眼精疲労軽減" },
+      { name: "クレアチン", note: "", effect: "短時間高強度パフォーマンス向上・筋力増加・脳のエネルギー供給" },
+      { name: "コリン", note: "条件付き必須寄り", effect: "細胞膜のホスファチジルコリン構成・アセチルコリン合成（記憶・学習）・肝臓の脂肪代謝" },
+      { name: "イノシトール", note: "", effect: "精神安定（不安・パニック緩和）・PCOS改善・脂肪肝抑制" },
+      { name: "テアニン", note: "緑茶", effect: "リラックス（α波誘導）・ストレス低下・カフェインとの相乗で集中力向上" },
+      { name: "カフェイン", note: "", effect: "覚醒・集中力向上・代謝促進・脂肪燃焼・持久系パフォーマンス向上" },
+      { name: "クルクミン", note: "ターメリック", effect: "強力な抗炎症・抗酸化・認知症予防（アミロイドβ抑制）・関節炎緩和" },
+      { name: "スルフォラファン", note: "ブロッコリー", effect: "解毒酵素（Nrf2経路）誘導・抗がん・抗炎症・ヘリコバクター抑制" },
+      { name: "アリシン", note: "ニンニク", effect: "抗菌・抗ウイルス・免疫強化・LDL低下・血液凝固抑制" },
+      { name: "βグルカン", note: "キノコ", effect: "マクロファージ・NK細胞の活性化による免疫強化・LDL低下・腫瘍抑制" },
+      { name: "フィチン酸", note: "二面性あり", effect: "抗酸化・がん予防（IP6として注目）※ミネラル吸収阻害の二面性あり" },
     ],
   },
 ];
@@ -479,13 +479,16 @@ export default function SeibunPage() {
                     <div className="text-xs font-bold mb-2 pb-1" style={{ color: "#1e3a8a", borderBottom: "1px solid #0c1a40" }}>
                       {sec.title}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {sec.items.map((item) => (
-                        <div key={item.name} className="flex items-baseline gap-1">
-                          <span className="text-sm font-bold" style={{ color: "#bfdbfe" }}>{item.name}</span>
-                          {item.note && (
-                            <span className="text-xs" style={{ color: "#1e3a8a" }}>{item.note}</span>
-                          )}
+                        <div key={item.name} className="rounded-xl p-3" style={{ backgroundColor: "#0c1a40", border: "1px solid #1e3a8a22" }}>
+                          <div className="flex items-baseline gap-1 mb-1">
+                            <span className="text-sm font-bold" style={{ color: "#bfdbfe" }}>{item.name}</span>
+                            {item.note && (
+                              <span className="text-xs" style={{ color: "#334155" }}>{item.note}</span>
+                            )}
+                          </div>
+                          <p className="text-xs" style={{ color: "#60a5fa" }}>{item.effect}</p>
                         </div>
                       ))}
                     </div>
