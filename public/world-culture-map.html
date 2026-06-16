@@ -384,6 +384,57 @@ svg#map:active { cursor:grabbing; }
 .jpref-path:hover { stroke:#555; stroke-width:1; opacity:0.85; }
 .jpref-path.jpref-active { stroke:#c0784a !important; stroke-width:2; opacity:1; }
 
+/* ── 中国省別平均月収マップ（モーダル） ── */
+#china-section {
+  position:fixed; z-index:300; inset:0;
+  background:rgba(0,0,0,0.55);
+  display:none; align-items:center; justify-content:center;
+  backdrop-filter:blur(2px);
+}
+#china-section.open { display:flex; }
+#china-inner {
+  background:var(--bg); border-radius:12px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.45);
+  width:min(94vw,1040px); height:min(88vh,740px);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#china-section-hdr {
+  font-size:13px; color:var(--tx2); padding:10px 16px;
+  border-bottom:0.5px solid var(--bd); flex-shrink:0;
+  background:var(--bg2); display:flex; align-items:center; gap:8px;
+}
+#china-body { flex:1; display:flex; flex-direction:row; overflow:hidden; }
+#china-map-col {
+  flex:1; position:relative; padding:8px 8px 4px;
+}
+#china-svg { width:100%; height:100%; }
+#prov-tip {
+  position:absolute; pointer-events:none;
+  background:rgba(0,0,0,0.75); color:#fff;
+  font-size:12px; padding:2px 10px; border-radius:8px;
+  white-space:nowrap; opacity:0; transition:opacity 0.1s;
+  top:0; left:0;
+}
+#china-info-col {
+  width:260px; flex-shrink:0; padding:20px 22px;
+  border-left:0.5px solid var(--bd);
+  display:flex; flex-direction:column; justify-content:center;
+}
+#prov-name { font-size:17px; font-weight:600; color:var(--tx); margin-bottom:6px; }
+#prov-wage { line-height:1.1; margin-bottom:6px; }
+#prov-sub  { font-size:12px; color:var(--tx2); line-height:1.6; }
+#prov-note { font-size:11px; color:var(--tx3); margin-top:12px; line-height:1.6; }
+#china-legend {
+  position:absolute; bottom:10px; left:12px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.cnprov-path {
+  stroke:var(--bg); stroke-width:0.4; cursor:pointer;
+  transition:opacity 0.1s, stroke-width 0.1s;
+}
+.cnprov-path:hover { stroke:#555; stroke-width:1; opacity:0.85; }
+.cnprov-path.cnprov-active { stroke:#c0784a !important; stroke-width:2; opacity:1; }
+
 /* ── リサイズハンドル ── */
 #resizer {
   position:absolute; left:0; top:0; bottom:0; width:6px;
@@ -520,6 +571,35 @@ svg#map:active { cursor:grabbing; }
         <div id="pref-wage"></div>
         <div id="pref-sub"></div>
         <div id="pref-note">地域別最低賃金（厚生労働省）<br>※毎年10月頃に改定</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 中国省別平均月収マップ モーダル ── -->
+<div id="china-section" onclick="if(event.target===this)this.classList.remove('open')">
+  <div id="china-inner">
+    <div id="china-section-hdr">
+      🗺 省・直轄市別 平均月収マップ
+      <span style="font-size:11px;color:var(--tx3)">（2024年 国家統計局）</span>
+      <button class="japan-close" onclick="document.getElementById('china-section').classList.remove('open')" title="閉じる">✕</button>
+    </div>
+    <div id="china-body">
+      <div id="china-map-col">
+        <svg id="china-svg"></svg>
+        <div id="prov-tip"></div>
+        <div id="china-legend">
+          <div class="jleg"><div class="jleg-dot" style="background:#4a9a22"></div>9,000元〜（高）</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#EF9F27"></div>6,000〜8,999元</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#E87A3A"></div>5,000〜5,999元</div>
+          <div class="jleg"><div class="jleg-dot" style="background:#E24B4A"></div>〜4,999元（低）</div>
+        </div>
+      </div>
+      <div id="china-info-col">
+        <div id="prov-name">🗺 省・直轄市をクリック</div>
+        <div id="prov-wage"></div>
+        <div id="prov-sub"></div>
+        <div id="prov-note">中国国家統計局 2024年データ<br>※沿岸部（北京・上海・広東）と内陸部の格差が顕著</div>
       </div>
     </div>
   </div>
@@ -3958,6 +4038,9 @@ function showPanel(info, id){
     if(id === 392){
       jBtn.style.display = 'inline-block'; jBtn.textContent = '🗾 都道府県';
       jBtn.onclick = openJapanMap;
+    } else if(id === 156){
+      jBtn.style.display = 'inline-block'; jBtn.textContent = '🗺 省別';
+      jBtn.onclick = openChinaMap;
     } else if(REGION_DB[id]){
       jBtn.style.display = 'inline-block'; jBtn.textContent = REGION_DB[id].btnLabel;
       jBtn.onclick = () => openRegionDetail(id);
@@ -3965,9 +4048,11 @@ function showPanel(info, id){
       jBtn.style.display = 'none';
     }
   }
-  // 都道府県モーダルは自動では開かない。他の国クリックで閉じる。
+  // モーダルは他の国クリックで閉じる
   const js = document.getElementById('japan-section');
   if(js && id !== 392) js.classList.remove('open');
+  const cs = document.getElementById('china-section');
+  if(cs && id !== 156) cs.classList.remove('open');
   // 地域詳細モーダルも別の国に切り替えたら閉じる
   closeRegionModal();
   renderCards(info, currentTab);
@@ -4524,6 +4609,135 @@ function _drawPrefMap(topo){
       if(subEl) subEl.innerHTML = wage != null
         ? `全国 <strong>${rank}</strong> 位（47都道府県中）　全国平均比 <strong style="color:${diff >= 0 ? '#178DDC' : '#c07010'}">${diff >= 0 ? '+' : ''}${diff}円</strong>`
         : '';
+    });
+}
+
+// ── 中国省別平均月収マップ ─────────────────────────────────────────────────
+let _cnTopo = null;
+const CN_DATA = {
+  '上海市':{val:12500,sub:'金融・貿易・外資企業集積。最低賃金2,690元/月'},
+  '北京市':{val:12000,sub:'行政・テック（バイドゥ・JD等）・教育'},
+  '浙江省':{val:9500, sub:'杭州（アリババ）・EC・民間企業強い'},
+  '広東省':{val:9200, sub:'深圳（テック）・広州（自動車）・輸出製造業'},
+  '江蘇省':{val:8800, sub:'南京・蘇州（日系多い）・製造業・IT'},
+  '福建省':{val:7500, sub:'アモイ（厦門）・台湾資本多い・輸出'},
+  '天津市':{val:7000, sub:'港湾・航空宇宙・重工業'},
+  '山東省':{val:6500, sub:'青島（ビール・ハイアール）・農業・製造'},
+  '湖北省':{val:6500, sub:'武漢・自動車・大学都市'},
+  '重慶市':{val:6200, sub:'内陸最大都市・自動車（長安）'},
+  '四川省':{val:6000, sub:'成都・テック・農業'},
+  '湖南省':{val:5800, sub:'農業・資源'},
+  '河南省':{val:5500, sub:'人口最多省・農業・内陸'},
+  '安徽省':{val:5200, sub:'農業省・出稼ぎ送出し多い'},
+  '甘粛省':{val:4500, sub:'西北部・農業・全国最低水準域'},
+};
+
+function cnIncomeColor(v){
+  if(v >= 9000) return '#4a9a22';
+  if(v >= 6000) return '#EF9F27';
+  if(v >= 5000) return '#E87A3A';
+  return '#E24B4A';
+}
+
+function openChinaMap(){
+  const cs = document.getElementById('china-section');
+  if(!cs) return;
+  cs.classList.add('open');
+  requestAnimationFrame(() => renderChinaMap());
+}
+
+function renderChinaMap(){
+  const svgEl = document.getElementById('china-svg');
+  if(!svgEl) return;
+  if(_cnTopo){ _drawChinaMap(_cnTopo); return; }
+  fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/china/china-provinces.json')
+    .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(topo => { _cnTopo = topo; _drawChinaMap(topo); })
+    .catch(() => {
+      const col = document.getElementById('china-map-col');
+      if(col) col.innerHTML = '<div style="padding:20px;color:var(--tx3);font-size:13px">地図の読み込みに失敗しました<br>ネットワーク接続を確認してください</div>';
+    });
+}
+
+function _drawChinaMap(topo){
+  const svgEl = document.getElementById('china-svg');
+  if(!svgEl) return;
+  const col = document.getElementById('china-map-col');
+  const W = col ? col.clientWidth  : 640;
+  const H = col ? col.clientHeight : 460;
+
+  const objKey = Object.keys(topo.objects)[0];
+  const features = topojson.feature(topo, topo.objects[objKey]).features;
+  const fc = { type:'FeatureCollection', features };
+
+  const cnNames = ADMIN_MAP_CONFIG[156].names;
+  function getPropName(props){
+    return props.NAME_1||props.name||props.NAME||props.shapeName||props.admin||props.ADM1_EN||'';
+  }
+  function getJpName(d){
+    const n = getPropName(d.properties);
+    return cnNames[n] || null;
+  }
+
+  const proj2 = d3.geoMercator().fitSize([W - 8, H - 36], fc);
+  const path2 = d3.geoPath().projection(proj2);
+  const svg2  = d3.select(svgEl);
+  svg2.attr('width', W).attr('height', H);
+  svg2.selectAll('*').remove();
+
+  const sorted = Object.entries(CN_DATA).sort(([,a],[,b]) => b.val - a.val);
+  const rankOf = {};
+  sorted.forEach(([n,], i) => { rankOf[n] = i + 1; });
+  const avg = Math.round(sorted.reduce((s,[,r]) => s + r.val, 0) / sorted.length);
+
+  const tip    = document.getElementById('prov-tip');
+  const nameEl = document.getElementById('prov-name');
+  const wageEl = document.getElementById('prov-wage');
+  const subEl  = document.getElementById('prov-sub');
+
+  svg2.selectAll('.cnprov-path')
+    .data(features)
+    .enter().append('path')
+    .attr('class', 'cnprov-path')
+    .attr('d', path2)
+    .attr('fill', d => {
+      const jp = getJpName(d);
+      return (jp && CN_DATA[jp]) ? cnIncomeColor(CN_DATA[jp].val) : 'var(--bg3)';
+    })
+    .attr('stroke', 'var(--bg)').attr('stroke-width', 0.4)
+    .style('cursor', d => { const jp=getJpName(d); return (jp&&CN_DATA[jp])?'pointer':'default'; })
+    .on('mouseover', (evt, d) => {
+      const jp = getJpName(d);
+      const r  = jp ? CN_DATA[jp] : null;
+      if(r && tip){
+        tip.textContent = `${jp}：${r.val.toLocaleString()}元/月`;
+        tip.style.opacity = '1';
+      }
+    })
+    .on('mousemove', (evt) => {
+      if(!tip || !col) return;
+      const rect = col.getBoundingClientRect();
+      tip.style.left = (evt.clientX - rect.left + 10) + 'px';
+      tip.style.top  = (evt.clientY - rect.top  - 28) + 'px';
+    })
+    .on('mouseout', () => { if(tip) tip.style.opacity = '0'; })
+    .on('click', (evt, d) => {
+      const jp = getJpName(d);
+      const r  = jp ? CN_DATA[jp] : null;
+      if(!r) return;
+      svg2.selectAll('.cnprov-path').classed('cnprov-active', false);
+      d3.select(evt.currentTarget).classed('cnprov-active', true);
+      if(tip) tip.style.opacity = '0';
+      const rank = rankOf[jp] ?? '–';
+      const diff = r.val - avg;
+      if(nameEl) nameEl.textContent = jp;
+      if(wageEl) wageEl.innerHTML =
+        `<span style="font-size:2em;font-weight:700;color:#178DDC">${r.val.toLocaleString()}</span>`+
+        `<span style="font-size:0.9em;color:var(--tx2)"> 元/月</span>`;
+      if(subEl) subEl.innerHTML =
+        `全国 <strong>${rank}</strong> 位（${sorted.length}省市中）　`+
+        `全国平均比 <strong style="color:${diff>=0?'#178DDC':'#c07010'}">${diff>=0?'+':''}${diff.toLocaleString()}元</strong>`+
+        `<br><br>${r.sub}`;
     });
 }
 
