@@ -265,6 +265,29 @@ svg#map:active { cursor:grabbing; }
 .rg-bar-wrap { width:70px; height:7px; background:var(--bg3); border-radius:3px; overflow:hidden; flex-shrink:0; }
 .rg-bar-fill { height:100%; border-radius:3px; transition:width 0.3s; }
 .rg-val { width:58px; text-align:right; font-size:11px; font-weight:600; flex-shrink:0; }
+/* 指標トグルバー */
+#region-metric-bar {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:8px 20px; border-bottom:0.5px solid var(--bd); flex-shrink:0;
+}
+.mt-seg { display:inline-flex; background:var(--bg2); border:0.5px solid var(--bd); border-radius:8px; overflow:hidden; }
+.mt-btn {
+  border:none; background:transparent; color:var(--tx2);
+  font-size:11.5px; padding:5px 13px; cursor:pointer; transition:background 0.12s,color 0.12s; white-space:nowrap;
+}
+.mt-btn:hover { background:var(--bg3); color:var(--tx); }
+.mt-btn.on { background:#178DDC; color:#fff; font-weight:600; }
+.mt-hint { font-size:10.5px; color:var(--tx3); flex:1; min-width:120px; line-height:1.4; }
+/* 情報パネルの3指標ブロック */
+.m3 { display:flex; flex-direction:column; gap:5px; margin-top:2px; }
+.m3row {
+  display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+  padding:6px 9px; border-radius:7px; background:var(--bg2); transition:outline 0.12s;
+}
+.m3row.on { outline:1.5px solid #178DDC; background:var(--bg3); }
+.m3row span { font-size:11px; color:var(--tx2); }
+.m3row b { font-size:16px; font-weight:700; }
+.m3row b i { font-size:0.6em; font-weight:500; color:var(--tx3); margin-left:2px; font-style:normal; }
 /* us-map container */
 #us-svg-wrap { width:100%; height:100%; position:relative; }
 #us-svg-wrap svg { display:block; }
@@ -614,6 +637,14 @@ svg#map:active { cursor:grabbing; }
         <span id="region-subtitle"></span>
       </div>
       <button class="region-close" onclick="closeRegionModal()" title="閉じる">✕</button>
+    </div>
+    <div id="region-metric-bar">
+      <div class="mt-seg">
+        <button class="mt-btn" data-metric="income" onclick="setRegionMetric('income')">💴 名目収入</button>
+        <button class="mt-btn" data-metric="price"  onclick="setRegionMetric('price')">🏷 物価指数</button>
+        <button class="mt-btn" data-metric="real"   onclick="setRegionMetric('real')">⚖ 実質購買力</button>
+      </div>
+      <span class="mt-hint" id="region-metric-hint"></span>
     </div>
     <div id="region-body">
       <div id="region-list-col"></div>
@@ -4070,9 +4101,81 @@ function openJapanMap(){
 // ══════════════════════════════════════════════════════
 let _usTopo = null;
 
+// ── 物価指数モデル ───────────────────────────────────────────────────────────
+// 基準物価 = 100×(地域賃金/全国平均)^0.4 （賃金が高い地域ほど物価も高いが伸びは緩やか）
+// それに「既知の割高/割安」補正を掛ける。実質購買力 = 名目収入 ÷ 物価指数。
+let _regionMetric = 'income';
+let _regionCurrentId = null;
+let _regionSelName = null;
+
+const REGION_PI_ADJ = {
+  840:{'California':1.25,'New York':1.22,'Hawaii':1.30,'District of Columbia':1.22,'Massachusetts':1.16,'Washington':1.12,'New Jersey':1.10,'Connecticut':1.10,'Maryland':1.08,'Colorado':1.06,'Oregon':1.05,'Alaska':1.12,'Rhode Island':1.04,'Vermont':1.04,'Mississippi':0.86,'Arkansas':0.88,'Alabama':0.88,'West Virginia':0.86,'Oklahoma':0.88,'Kentucky':0.89,'Kansas':0.90,'Tennessee':0.90,'Iowa':0.91,'Missouri':0.92,'Indiana':0.92,'Ohio':0.93,'Georgia':0.95},
+  276:{'バイエルン':1.10,'ハンブルク':1.10,'ヘッセン':1.08,'ベルリン':1.08,'バーデン＝ヴュルテンベルク':1.06,'メクレンブルク＝フォアポンメルン':0.86,'ザクセン＝アンハルト':0.87,'テューリンゲン':0.88,'ザクセン':0.90,'ブランデンブルク':0.90,'ザールラント':0.92},
+  826:{'ロンドン':1.30,'サウスイースト':1.12,'イーストオブイングランド':1.06,'ノースイースト':0.86,'ノーザンアイルランド':0.86,'ウェールズ':0.88,'ヨークシャー・ハンバー':0.90},
+  36:{'ニューサウスウェールズ州':1.12,'ACT（首都特別地域）':1.08,'ビクトリア州':1.05,'タスマニア州':0.90,'南オーストラリア州':0.94},
+  250:{'イル・ド・フランス（パリ首都圏）':1.22,'プロヴァンス＝アルプ＝コート・ダジュール':1.06,'コルス':1.05,'オー・ド・フランス':0.90,'ブルターニュ':0.93},
+  156:{'上海市':1.20,'北京市':1.18,'広東省':1.06,'浙江省':1.05,'重慶市':0.90,'四川省':0.92,'湖南省':0.90,'安徽省':0.89,'河南省':0.88,'甘粛省':0.85},
+  356:{'マハーラーシュトラ州':1.18,'デリー首都圏':1.15,'カルナータカ州':1.08,'西ベンガル州':0.92,'ウッタル・プラデーシュ州':0.88,'ビハール州':0.85},
+  410:{'ソウル特別市':1.20,'京畿道':1.08,'済州特別自治道':0.98,'全羅南道':0.90,'江原特別自治道':0.92},
+  76:{'リオデジャネイロ州':1.12,'サンパウロ州':1.10,'連邦直轄区（ブラジリア）':1.08,'セアラー州':0.90,'ペルナンブコ州':0.90,'パラー州':0.92,'バイア州':0.92},
+  764:{'プーケット':1.18,'バンコク首都圏':1.15,'東北部（イサーン）':0.86,'南部（スラータニー等）':0.92,'北部（チェンマイ）':0.94},
+  682:{'リヤード州':1.08,'マッカ州（ジッダ・メッカ）':1.05,'東部州（ダンマーム・ジュバイル）':0.96,'ジャウフ州':0.90,'カスィーム州':0.92},
+  124:{'ブリティッシュコロンビア州':1.18,'オンタリオ州':1.12,'ヌナブト準州':1.32,'ノースウェスト準州':1.22,'ユーコン準州':1.10,'アルバータ州':0.98,'マニトバ州':0.93,'ニューブランズウィック州':0.92,'ニューファンドランド・ラブラドール州':0.94},
+  484:{'メキシコシティ（CDMX）':1.12,'バハカリフォルニア州（ティファナ）':1.08,'チアパス州':0.88,'オアハカ州':0.90},
+  380:{'ロンバルディア州（ミラノ）':1.12,'ラツィオ州（ローマ）':1.08,'トレンティーノ＝アルト・アディジェ州':1.06,'カラブリア州':0.88,'シチリア州':0.90,'カンパニア州（ナポリ）':0.92},
+  724:{'マドリード州':1.12,'カタルーニャ州（バルセロナ）':1.10,'バスク州':1.08,'カナリア諸島':1.02,'エストレマドゥーラ州':0.90,'アンダルシア州':0.92,'ムルシア州':0.93},
+  643:{'モスクワ市':1.25,'サンクトペテルブルク市':1.12,'チュコトカ自治管区':1.35,'ネネツ自治管区':1.30,'ヤマル＝ネネツ自治管区':1.25,'マガダン州':1.20,'サハ共和国（ヤクーティア）':1.18,'チェチェン共和国':0.88,'クラスノダール地方':0.92,'タタルスタン共和国（カザン）':0.95},
+  360:{'DKIジャカルタ':1.15,'パプア州':1.20,'バリ州':1.10,'特別地域ジョグジャカルタ':0.92,'中部ジャワ州（スマラン）':0.92,'東ジャワ州（スラバヤ）':0.93},
+  792:{'イスタンブール':1.15,'アンタルヤ州':1.05,'シャンルウルファ州':0.88,'ディヤルバクル州':0.90},
+  704:{'ホーチミン市':1.12,'ハノイ市':1.08,'ダナン市':1.02,'ゲアン省（ヴィン）':0.90,'タイン・ホア省':0.91,'カン・トー市':0.93},
+  32:{'ブエノスアイレス市':1.15,'ティエラ・デル・フエゴ州':1.12,'サンティアゴ・デル・エステロ州':0.90,'ミシオネス州':0.92,'サルタ州':0.92},
+};
+
+const METRICS = {
+  income:{ get:r=>r.val,  invert:false, hint:'額面の収入そのもの。物価は考慮しない' },
+  price: { get:r=>r.pi,   invert:true,  hint:'生活コスト水準（その国の平均=100）。高いほど物価が高い＝赤。賃金水準と既知の割高/割安から推計' },
+  real:  { get:r=>r.real, invert:false, hint:'名目収入 ÷ 物価指数。物価を踏まえた「実際の暮らしやすさ」' },
+};
+
+function enrichRegions(countryId){
+  const data = REGION_DB[countryId];
+  if(!data || data._enriched) return;
+  const vals = Object.values(data.regions).map(r=>r.val);
+  const avg = (vals.reduce((a,b)=>a+b,0)/vals.length) || 1;
+  const adj = REGION_PI_ADJ[countryId] || {};
+  Object.entries(data.regions).forEach(([name,r])=>{
+    const base = 100 * Math.pow(r.val/avg, 0.4);
+    r.pi   = Math.max(45, Math.round(base * (adj[name]||1)));
+    r.real = r.val * 100 / r.pi;
+  });
+  data._enriched = true;
+}
+
+function _fmtRegionNum(v, data){
+  const maxV = Math.max(...Object.values(data.regions).map(r=>r.val));
+  return maxV < 100 ? (Math.round(v*100)/100).toLocaleString() : Math.round(v).toLocaleString();
+}
+function _metricStats(data){
+  const g = METRICS[_regionMetric].get;
+  const vs = Object.values(data.regions).map(g);
+  return { min:Math.min(...vs), max:Math.max(...vs) };
+}
+function _metricColor(v, st){
+  let t = (v - st.min) / ((st.max - st.min) || 1);
+  if(METRICS[_regionMetric].invert) t = 1 - t;
+  return _rgColor(t);
+}
+function _metricDisplay(r, data){
+  if(_regionMetric === 'price') return r.pi + '';
+  return _fmtRegionNum(METRICS[_regionMetric].get(r), data);
+}
+
 function openRegionDetail(countryId){
   const data = REGION_DB[countryId];
   if(!data) return;
+  _regionCurrentId = countryId;
+  _regionSelName = null;
+  enrichRegions(countryId);
   const modal = document.getElementById('region-modal');
   modal.classList.add('open');
   document.getElementById('region-title').textContent    = data.title;
@@ -4081,13 +4184,31 @@ function openRegionDetail(countryId){
   document.getElementById('region-sel-name').textContent = '← 地域をクリック';
   document.getElementById('region-sel-val').innerHTML    = '';
   document.getElementById('region-sel-sub').textContent  = '';
-  if(data.type === 'us-map'){
-    renderUsaMap(data);
-  } else if(ADMIN_MAP_CONFIG[countryId]){
-    renderAdminMap(data, countryId);
-  } else {
-    renderRegionList(data);
-  }
+  _syncMetricButtons();
+  renderRegionView();
+}
+
+function setRegionMetric(m){
+  if(!METRICS[m] || m === _regionMetric) return;
+  _regionMetric = m;
+  _syncMetricButtons();
+  renderRegionView();
+  if(_regionSelName) selectRegion(_regionSelName);
+}
+function _syncMetricButtons(){
+  document.querySelectorAll('#region-metric-bar .mt-btn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.metric === _regionMetric);
+  });
+  const h = document.getElementById('region-metric-hint');
+  if(h) h.textContent = METRICS[_regionMetric].hint;
+}
+function renderRegionView(){
+  const id = _regionCurrentId;
+  const data = REGION_DB[id];
+  if(!data) return;
+  if(data.type === 'us-map')        renderUsaMap(data);
+  else if(ADMIN_MAP_CONFIG[id])     renderAdminMap(data, id);
+  else                              renderRegionList(data);
 }
 
 function closeRegionModal(){
@@ -4104,24 +4225,22 @@ function _rgColor(t){
 let _regionListHandler = null;
 
 function renderRegionList(data){
-  const entries = Object.entries(data.regions).sort(([,a],[,b]) => b.val - a.val);
-  const vals = entries.map(([,r]) => r.val);
-  const minV = Math.min(...vals), maxV = Math.max(...vals);
-  const range = maxV - minV || 1;
+  const g = METRICS[_regionMetric].get;
+  const entries = Object.entries(data.regions).sort(([,a],[,b]) => g(b) - g(a));
+  const st = _metricStats(data);
+  const range = (st.max - st.min) || 1;
 
   let html = '';
   entries.forEach(([name, r], i) => {
-    const t   = (r.val - minV) / range;
-    const col = _rgColor(t);
+    const t   = (g(r) - st.min) / range;
+    const col = _metricColor(g(r), st);
     const bw  = (t * 100).toFixed(1);
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    html += `<div class="rg-row"
-      data-name="${esc(name)}" data-val="${r.val}"
-      data-sub="${esc(r.sub||'')}" data-label="${esc(data.valueLabel)}" data-unit="${esc(data.valueUnit)}">
+    html += `<div class="rg-row" data-name="${esc(name)}">
       <span class="rg-rank">${i+1}</span>
       <span class="rg-name" title="${esc(name)}">${name}</span>
       <div class="rg-bar-wrap"><div class="rg-bar-fill" style="width:${bw}%;background:${col}"></div></div>
-      <span class="rg-val" style="color:${col}">${r.val.toLocaleString()}</span>
+      <span class="rg-val" style="color:${col}">${_metricDisplay(r, data)}</span>
     </div>`;
   });
   const listCol = document.getElementById('region-list-col');
@@ -4130,19 +4249,41 @@ function renderRegionList(data){
   _regionListHandler = e => {
     const row = e.target.closest('.rg-row');
     if(!row) return;
-    selectRgRow(row, row.dataset.name, +row.dataset.val, row.dataset.sub, row.dataset.label, row.dataset.unit);
+    selectRegion(row.dataset.name);
   };
   listCol.addEventListener('click', _regionListHandler);
+  if(_regionSelName){
+    const sel = listCol.querySelector(`.rg-row[data-name="${CSS.escape(_regionSelName)}"]`);
+    if(sel) sel.classList.add('rg-sel');
+  }
 }
 
-function selectRgRow(el, name, val, sub, label, unit){
-  document.querySelectorAll('.rg-row').forEach(r => r.classList.remove('rg-sel'));
-  el.classList.add('rg-sel');
+function selectRegion(name){
+  const data = REGION_DB[_regionCurrentId];
+  if(!data) return;
+  const r = data.regions[name];
+  if(!r) return;
+  _regionSelName = name;
+  document.querySelectorAll('.rg-row').forEach(x=>{
+    x.classList.toggle('rg-sel', x.dataset.name === name);
+  });
   document.getElementById('region-sel-name').textContent = name;
+  const unit = data.valueUnit;
+  const piColor = r.pi >= 110 ? '#E24B4A' : (r.pi <= 90 ? '#4a9a22' : '#E2884A');
+  const rows = [
+    {k:'income', lbl:'名目'+data.valueLabel, val:_fmtRegionNum(r.val,data),  u:unit,   c:'var(--tx)'},
+    {k:'price',  lbl:'物価指数',             val:r.pi,                        u:'/100', c:piColor},
+    {k:'real',   lbl:'実質購買力',           val:_fmtRegionNum(r.real,data),  u:unit,   c:'#178DDC'},
+  ];
   document.getElementById('region-sel-val').innerHTML =
-    `<span style="font-size:0.82em;color:var(--tx3)">${label}</span><br>` +
-    `<span style="font-size:1.5em;font-weight:700;color:#178DDC">${Number(val).toLocaleString()}<span style="font-size:0.65em;margin-left:3px">${unit}</span></span>`;
-  document.getElementById('region-sel-sub').textContent = sub || '';
+    '<div class="m3">' + rows.map(x=>
+      `<div class="m3row ${x.k===_regionMetric?'on':''}"><span>${x.lbl}</span>`+
+      `<b style="color:${x.c}">${typeof x.val==='number'?x.val.toLocaleString():x.val}<i>${x.u}</i></b></div>`
+    ).join('') + '</div>';
+  const piTxt = r.pi >= 108 ? `物価が高め（指数${r.pi}）で、名目より実質は目減り`
+              : r.pi <= 92  ? `物価が安め（指数${r.pi}）で、名目より実質は割増し`
+              : `物価はほぼ全国平均（指数${r.pi}）`;
+  document.getElementById('region-sel-sub').textContent = (r.sub ? r.sub + ' ／ ' : '') + piTxt;
 }
 
 // ── 国別行政区画SVGマップ（deldersveld TopoJSON） ──────────────────────────────
@@ -4169,12 +4310,9 @@ function renderAdminMap(data, countryId){
     const features = topojson.feature(topo, topo.objects[objKey]).features;
     const fc = {type:'FeatureCollection', features};
 
-    const vals = Object.values(data.regions).map(r=>r.val);
-    const minV = Math.min(...vals), maxV = Math.max(...vals);
-    function getC(v){
-      if(v==null) return 'var(--bg3)';
-      return _rgColor((v-minV)/(maxV-minV||1));
-    }
+    const g = METRICS[_regionMetric].get;
+    const st = _metricStats(data);
+    const unitTxt = _regionMetric==='price' ? '' : data.valueUnit;
 
     const proj = d3.geoMercator().fitSize([W, H-30], fc);
     const path = d3.geoPath().projection(proj);
@@ -4190,7 +4328,8 @@ function renderAdminMap(data, countryId){
       .attr('d', path)
       .attr('fill', d=>{
         const jp=getJpKey(d);
-        return (jp&&data.regions[jp]) ? getC(data.regions[jp].val) : 'var(--bg3)';
+        const r=jp&&data.regions[jp];
+        return r ? _metricColor(g(r), st) : 'var(--bg3)';
       })
       .attr('stroke','var(--bg)').attr('stroke-width',0.7)
       .style('cursor', d => (getJpKey(d)&&data.regions[getJpKey(d)]) ? 'pointer' : 'default')
@@ -4201,7 +4340,7 @@ function renderAdminMap(data, countryId){
           tip.style.display='block';
           tip.style.left=(event.offsetX+10)+'px';
           tip.style.top=Math.max(0,event.offsetY-34)+'px';
-          tip.innerHTML=`<strong>${jp}</strong>&nbsp;${r.val.toLocaleString()}${data.valueUnit}`;
+          tip.innerHTML=`<strong>${jp}</strong>&nbsp;${_metricDisplay(r,data)}${unitTxt}`;
         }
       })
       .on('mouseleave',()=>{ tip.style.display='none'; })
@@ -4210,16 +4349,24 @@ function renderAdminMap(data, countryId){
         const r=jp?data.regions[jp]:null;
         if(!r) return;
         sv.selectAll('path').attr('stroke','var(--bg)').attr('stroke-width',0.7);
-        d3.select(event.currentTarget).attr('stroke','#fff').attr('stroke-width',2);
+        d3.select(event.currentTarget).attr('stroke','#fff').attr('stroke-width',2).raise();
         tip.style.display='none';
-        selectRgRow({classList:{add:()=>{},remove:()=>{}}},jp,r.val,r.sub||'',data.valueLabel,data.valueUnit);
+        selectRegion(jp);
       });
 
+    // 選択中の地域を再ハイライト（指標切替時）
+    if(_regionSelName){
+      sv.selectAll('path').filter(d=>getJpKey(d)===_regionSelName)
+        .attr('stroke','#fff').attr('stroke-width',2).raise();
+    }
+
     // 凡例
+    const inv = METRICS[_regionMetric].invert;
+    const lblNum = v => _regionMetric==='price' ? Math.round(v)+'' : _fmtRegionNum(v, data);
     const steps=[
-      {l:`${maxV.toLocaleString()}（高）`,c:getC(maxV)},
-      {l:`${Math.round((minV+maxV)/2).toLocaleString()}（中）`,c:getC((minV+maxV)/2)},
-      {l:`${minV.toLocaleString()}（低）`,c:getC(minV)},
+      {l:`${lblNum(st.max)}${inv?'（割高）':'（高）'}`, c:_metricColor(st.max, st)},
+      {l:`${lblNum((st.min+st.max)/2)}`,               c:_metricColor((st.min+st.max)/2, st)},
+      {l:`${lblNum(st.min)}${inv?'（割安）':'（低）'}`, c:_metricColor(st.min, st)},
     ];
     const lg=sv.append('g').attr('transform',`translate(8,${H-26})`);
     steps.forEach((s,i)=>{
@@ -4248,13 +4395,10 @@ function renderUsaMap(data){
     if(!wrap) return;
     const W = wrap.clientWidth  || 600;
     const H = wrap.clientHeight || 420;
-    const vals = Object.values(data.regions).map(r => r.val);
-    const minV = Math.min(...vals), maxV = Math.max(...vals);
-
-    function getC(v){
-      if(v == null) return 'var(--bg3)';
-      return _rgColor((v - minV) / (maxV - minV || 1));
-    }
+    const g = METRICS[_regionMetric].get;
+    const st = _metricStats(data);
+    const inv = METRICS[_regionMetric].invert;
+    const unitTxt = _regionMetric==='price' ? '' : data.valueUnit;
 
     const svg = d3.select(wrap).append('svg').attr('width',W).attr('height',H);
     const proj = d3.geoAlbersUsa().fitSize([W, H-36],
@@ -4269,26 +4413,36 @@ function renderUsaMap(data){
       .data(topojson.feature(topo, topo.objects.states).features)
       .join('path')
       .attr('d', path)
-      .attr('fill', d => { const r=data.regions[d.properties.name]; return r?getC(r.val):'var(--bg3)'; })
+      .attr('fill', d => { const r=data.regions[d.properties.name]; return r?_metricColor(g(r),st):'var(--bg3)'; })
       .attr('stroke','var(--bg)').attr('stroke-width',0.7)
       .style('cursor','pointer')
       .on('mousemove',(event,d) => {
         const r=data.regions[d.properties.name];
         if(r){ tip.style.display='block';
           tip.style.left=(event.offsetX+10)+'px'; tip.style.top=(event.offsetY-30)+'px';
-          tip.innerHTML=`<strong>${d.properties.name}</strong> $${r.val}/h`; }
+          tip.innerHTML=`<strong>${d.properties.name}</strong> ${_metricDisplay(r,data)}${unitTxt}`; }
       })
       .on('mouseleave',()=>{ tip.style.display='none'; })
       .on('click',(event,d) => {
         const r=data.regions[d.properties.name]; if(!r) return;
         svg.selectAll('path').attr('stroke','var(--bg)').attr('stroke-width',0.7);
-        d3.select(event.currentTarget).attr('stroke','#fff').attr('stroke-width',2);
-        selectRgRow({classList:{add:()=>{},remove:()=>{}}},d.properties.name,r.val,r.sub||'',data.valueLabel,data.valueUnit);
-        document.querySelectorAll('.rg-row').forEach(x=>x.classList.remove('rg-sel'));
+        d3.select(event.currentTarget).attr('stroke','#fff').attr('stroke-width',2).raise();
+        selectRegion(d.properties.name);
       });
 
+    // 選択中の州を再ハイライト（指標切替時）
+    if(_regionSelName){
+      svg.selectAll('path').filter(d=>d.properties.name===_regionSelName)
+        .attr('stroke','#fff').attr('stroke-width',2).raise();
+    }
+
     // 凡例
-    const steps = [{l:`$${maxV}（高）`,c:getC(maxV)},{l:`$${Math.round((minV+maxV)/2)}前後`,c:getC((minV+maxV)/2)},{l:`$${minV}（連邦最低）`,c:getC(minV)}];
+    const lblNum = v => _regionMetric==='price' ? Math.round(v)+'' : '$'+_fmtRegionNum(v, data);
+    const steps = [
+      {l:`${lblNum(st.max)}${inv?'（割高）':'（高）'}`, c:_metricColor(st.max,st)},
+      {l:`${lblNum((st.min+st.max)/2)}前後`,           c:_metricColor((st.min+st.max)/2,st)},
+      {l:`${lblNum(st.min)}${inv?'（割安）':'（低）'}`, c:_metricColor(st.min,st)},
+    ];
     const lg = svg.append('g').attr('transform',`translate(8,${H-32})`);
     steps.forEach((s,i)=>{
       lg.append('rect').attr('x',i*110).attr('y',0).attr('width',10).attr('height',10).attr('fill',s.c).attr('rx',2);
