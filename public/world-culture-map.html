@@ -3883,19 +3883,35 @@ function renderCards(info, tab){
         (() => {
           const d = DISP_DB[currentCountryId];
           if (!d) return '';
-          const monthly = Math.round(d.annualJPY / 12);
+          const annualJPY = dispAnnualJPY(d);
           const jpD = DISP_DB[392];
-          const vsJp = !jpD ? '' : d.annualJPY > jpD.annualJPY
-            ? `<span style="color:#4ade80;font-size:0.82em"> ▲ 日本比 +${Math.round((d.annualJPY/jpD.annualJPY-1)*100)}%</span>`
-            : d.annualJPY < jpD.annualJPY
-            ? `<span style="color:#f87171;font-size:0.82em"> ▼ 日本比 −${Math.round((1-d.annualJPY/jpD.annualJPY)*100)}%</span>`
+          const jpAnnual = dispAnnualJPY(jpD);
+          if (annualJPY == null) {
+            // レート未取得時は現地通貨のみ表示
+            return `<div class="card" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.22)">
+              <div class="card-title">💰 可処分所得（平均）</div>
+              <div class="card-body">
+                <span style="font-size:0.82em;color:var(--tx3)">年間（現地通貨）</span><br>
+                <span style="font-size:1.3em;font-weight:600;color:#4ade80">約${dispLocalStr(d)}</span>
+                <div style="font-size:0.82em;color:var(--tx3);margin-top:4px">💱 円換算レート取得中…</div>
+                <div style="font-size:0.75em;color:var(--tx3);margin-top:6px">${d.src}</div>
+              </div>
+            </div>`;
+          }
+          const monthly = Math.round(annualJPY / 12);
+          const vsJp = !jpAnnual ? '' : annualJPY > jpAnnual
+            ? `<span style="color:#4ade80;font-size:0.82em"> ▲ 日本比 +${Math.round((annualJPY/jpAnnual-1)*100)}%</span>`
+            : annualJPY < jpAnnual
+            ? `<span style="color:#f87171;font-size:0.82em"> ▼ 日本比 −${Math.round((1-annualJPY/jpAnnual)*100)}%</span>`
             : '';
+          const fxNote = d.cur === 'JPY' ? '円建て' : `現地通貨 約${dispLocalStr(d)}／年・当月レートで自動換算`;
           return `<div class="card" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.22)">
             <div class="card-title">💰 可処分所得（平均）</div>
             <div class="card-body">
-              <span style="font-size:0.82em;color:var(--tx3)">年間（円換算）</span><br>
-              <span style="font-size:1.3em;font-weight:600;color:#4ade80">約${d.annualJPY.toLocaleString()}円</span>${vsJp}
+              <span style="font-size:0.82em;color:var(--tx3)">年間（円換算・月次更新）</span><br>
+              <span style="font-size:1.3em;font-weight:600;color:#4ade80">約${annualJPY.toLocaleString()}円</span>${vsJp}
               <div style="font-size:0.84em;color:var(--tx2);margin-top:4px">月換算 約${monthly.toLocaleString()}円</div>
+              <div style="font-size:0.76em;color:var(--tx3);margin-top:3px">💱 ${fxNote}</div>
               <div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--bd)">
                 <span style="font-size:0.82em;color:var(--tx3)">一般的な住居費の目安</span><br>
                 <span style="font-size:1.1em;font-weight:600;color:var(--tx)">可処分所得の約${d.rentRatio}%</span>
@@ -4979,39 +4995,57 @@ function nextFxUpdate(ts) {
 // ── 可処分所得データベース ─────────────────────────────────────────────────
 // 【算出方法】全労働者平均額面（正規＋非正規含む）から
 //   社会保険料（健康保険・年金・雇用保険相当）＋ 所得税 ＋ 住民税相当 を控除
-// annualJPY : 年間可処分所得（円換算・1人あたり）
+// cur       : 現地通貨コード（円換算は FX_RATES でライブ計算＝毎月自動更新）
+// local     : 年間可処分所得（現地通貨・1人あたり、控除後の手取り）
 // rentRatio : 住居費÷可処分所得の目安（%）
-// src       : 参照元・算出根拠
+// src       : 参照元・算出根拠（額面 × 控除率）
 const DISP_DB = {
-  392: { annualJPY: 2_400_000, rentRatio: 22, src: '厚労省賃金構造基本統計調査2023 全労働者平均約310万円 × 控除率約28%（社保15%+所得税5%+住民税8%）' },
-  840: { annualJPY: 6_000_000, rentRatio: 28, src: 'BLS 2024 全労働者平均$52,000 × 控除率約23%（連邦・州税+社保）≒$40,000 × 150円' },
-  156: { annualJPY:   640_000, rentRatio: 20, src: '中国国家統計局2024 全国平均年収36,000元 × 控除率約11%（社保） × 20円' },
-  410: { annualJPY: 3_000_000, rentRatio: 22, src: '韓国統計庁2024 全労働者平均3,500万ウォン × 控除率約22% × 0.11円' },
-  356: { annualJPY:   760_000, rentRatio: 25, src: 'NSSO 都市部全労働者平均500,000INR × 控除率約13% × 1.75円。農村部はさらに低い' },
-  250: { annualJPY: 3_700_000, rentRatio: 25, src: 'INSEE2024 全労働者平均€32,000 × 控除率約28%（社保+税） × 160円' },
-  276: { annualJPY: 4_150_000, rentRatio: 27, src: 'Destatis2024 全労働者平均€36,000 × 控除率約28% × 160円' },
-  826: { annualJPY: 4_800_000, rentRatio: 30, src: 'ONS2024 全労働者平均£34,000 × 控除率約25%（NI+所得税） × 190円' },
-  682: { annualJPY: 2_950_000, rentRatio: 15, src: 'サウジ労働統計局 自国民平均SAR80,000 × 控除率約8%（低税率） × 40円。住居補助が充実' },
-  764: { annualJPY:   840_000, rentRatio: 20, src: 'タイ国家統計局2024 全労働者平均THB240,000 × 控除率約12% × 4円' },
-  702: { annualJPY: 5_300_000, rentRatio: 24, src: 'MOM2024 全労働者平均SGD60,000 × 控除率約20%（CPF等） × 110円' },
-   76: { annualJPY: 1_060_000, rentRatio: 25, src: 'IBGE2024 全労働者平均BRL44,000 × 控除率約20% × 30円' },
-   36: { annualJPY: 5_200_000, rentRatio: 26, src: 'ABS/OECD2024 全労働者平均AUD68,000 × 控除率約23% × 100円' },
-  380: { annualJPY: 2_760_000, rentRatio: 24, src: 'Istat2024 全労働者平均€24,000 × 控除率約28% × 160円' },
-  724: { annualJPY: 2_680_000, rentRatio: 24, src: 'INE2024 全労働者平均€22,000 × 控除率約24% × 160円' },
-  528: { annualJPY: 4_000_000, rentRatio: 25, src: 'CBS2024 全労働者平均€36,000 × 控除率約30%（高社保率） × 160円' },
-  752: { annualJPY: 3_920_000, rentRatio: 24, src: 'SCB2024 全労働者平均SEK相当€36,000 × 控除率約32%（高累進税） × 160円' },
-  578: { annualJPY: 6_100_000, rentRatio: 22, src: 'SSB2024 全労働者平均€53,000 × 控除率約28% × 160円。石油基金による高福祉' },
-  124: { annualJPY: 4_570_000, rentRatio: 27, src: 'StatsCan2024 全労働者平均CAD54,000 × 控除率約23% × 110円' },
-  484: { annualJPY: 1_100_000, rentRatio: 22, src: 'INEGI2024 全労働者平均MXN136,000 × 控除率約10% × 9円。非公式労働者が多く実態は下振れ' },
-  643: { annualJPY: 1_100_000, rentRatio: 20, src: 'Rosstat2024 全労働者平均RUB700,000 × 控除率約13% × 1.8円。西側制裁で実質値変動大' },
-  792: { annualJPY: 1_200_000, rentRatio: 25, src: 'TurkStat2024 全労働者平均TRY280,000 × 控除率約15% × 5円。高インフレで実質値は急変動' },
-  704: { annualJPY:   480_000, rentRatio: 20, src: 'ベトナム統計総局2024 全労働者平均VND88,000,000 × 控除率約10% × 0.006円' },
-  360: { annualJPY:   500_000, rentRatio: 20, src: 'BPS2024 全労働者平均IDR65,000,000 × 控除率約12% × 0.0085円' },
-  458: { annualJPY: 1_490_000, rentRatio: 22, src: 'DOSM2024 全労働者平均MYR52,000 × 控除率約13% × 33円' },
-  608: { annualJPY:   600_000, rentRatio: 20, src: 'PSA2024 全労働者平均PHP260,000 × 控除率約12% × 2.6円' },
-  710: { annualJPY: 1_220_000, rentRatio: 25, src: 'StatsSA2024 全労働者平均ZAR180,000 × 控除率約15% × 8円。失業率32%で実態は二極化' },
-   32: { annualJPY: 1_350_000, rentRatio: 30, src: 'INDEC2024 USD9,000相当 × 150円。ハイパーインフレで名目値は月単位で変動' },
+  392: { cur:'JPY', local: 2_400_000,  rentRatio: 22, src: '厚労省賃金構造基本統計調査2023 全労働者平均額面約310万円 × 手取り率約77%' },
+  840: { cur:'USD', local:    40_000,  rentRatio: 28, src: 'BLS2024 全労働者平均額面$52,000 × 手取り率約77%（連邦・州税+社保控除後）' },
+  156: { cur:'CNY', local:    32_000,  rentRatio: 20, src: '中国国家統計局2024 全国平均年収36,000元 × 手取り率約89%（社保控除後）' },
+  410: { cur:'KRW', local:27_300_000,  rentRatio: 22, src: '韓国統計庁2024 全労働者平均3,500万ウォン × 手取り率約78%' },
+  356: { cur:'INR', local:   435_000,  rentRatio: 25, src: 'NSSO 都市部全労働者平均500,000INR × 手取り率約87%。農村部はさらに低い' },
+  250: { cur:'EUR', local:    23_000,  rentRatio: 25, src: 'INSEE2024 全労働者平均額面€32,000 × 手取り率約72%（社保+税控除後）' },
+  276: { cur:'EUR', local:    25_900,  rentRatio: 27, src: 'Destatis2024 全労働者平均額面€36,000 × 手取り率約72%' },
+  826: { cur:'GBP', local:    25_500,  rentRatio: 30, src: 'ONS2024 全労働者平均額面£34,000 × 手取り率約75%（NI+所得税控除後）' },
+  682: { cur:'SAR', local:    73_600,  rentRatio: 15, src: 'サウジ労働統計局 自国民平均SAR80,000 × 手取り率約92%（低税率）。住居補助が充実' },
+  764: { cur:'THB', local:   211_000,  rentRatio: 20, src: 'タイ国家統計局2024 全労働者平均THB240,000 × 手取り率約88%' },
+  702: { cur:'SGD', local:    48_000,  rentRatio: 24, src: 'MOM2024 全労働者平均SGD60,000 × 手取り率約80%（CPF等控除後）' },
+   76: { cur:'BRL', local:    35_200,  rentRatio: 25, src: 'IBGE2024 全労働者平均BRL44,000 × 手取り率約80%' },
+   36: { cur:'AUD', local:    52_400,  rentRatio: 26, src: 'ABS/OECD2024 全労働者平均AUD68,000 × 手取り率約77%' },
+  380: { cur:'EUR', local:    17_300,  rentRatio: 24, src: 'Istat2024 全労働者平均額面€24,000 × 手取り率約72%' },
+  724: { cur:'EUR', local:    16_700,  rentRatio: 24, src: 'INE2024 全労働者平均額面€22,000 × 手取り率約76%' },
+  528: { cur:'EUR', local:    25_200,  rentRatio: 25, src: 'CBS2024 全労働者平均額面€36,000 × 手取り率約70%（高社保率）' },
+  752: { cur:'SEK', local:   264_000,  rentRatio: 24, src: 'SCB2024 全労働者平均額面約388,000SEK × 手取り率約68%（高累進税）' },
+  578: { cur:'NOK', local:   411_000,  rentRatio: 22, src: 'SSB2024 全労働者平均額面約571,000NOK × 手取り率約72%。石油基金による高福祉' },
+  124: { cur:'CAD', local:    41_600,  rentRatio: 27, src: 'StatsCan2024 全労働者平均CAD54,000 × 手取り率約77%' },
+  484: { cur:'MXN', local:   122_400,  rentRatio: 22, src: 'INEGI2024 全労働者平均MXN136,000 × 手取り率約90%。非公式労働者が多く実態は下振れ' },
+  643: { cur:'RUB', local:   609_000,  rentRatio: 20, src: 'Rosstat2024 全労働者平均RUB700,000 × 手取り率約87%。西側制裁で実質値変動大' },
+  792: { cur:'TRY', local:   238_000,  rentRatio: 25, src: 'TurkStat2024 全労働者平均TRY280,000 × 手取り率約85%。高インフレで実質値は急変動' },
+  704: { cur:'VND', local:79_200_000,  rentRatio: 20, src: 'ベトナム統計総局2024 全労働者平均VND88,000,000 × 手取り率約90%' },
+  360: { cur:'IDR', local:57_200_000,  rentRatio: 20, src: 'BPS2024 全労働者平均IDR65,000,000 × 手取り率約88%' },
+  458: { cur:'MYR', local:    45_200,  rentRatio: 22, src: 'DOSM2024 全労働者平均MYR52,000 × 手取り率約87%' },
+  608: { cur:'PHP', local:   228_800,  rentRatio: 20, src: 'PSA2024 全労働者平均PHP260,000 × 手取り率約88%' },
+  710: { cur:'ZAR', local:   153_000,  rentRatio: 25, src: 'StatsSA2024 全労働者平均ZAR180,000 × 手取り率約85%。失業率32%で実態は二極化' },
+   32: { cur:'USD', local:     9_000,  rentRatio: 30, src: 'INDEC2024 USD建て約9,000ドル相当。ペソは高インフレのためドル建てで把握' },
 };
+
+// 可処分所得を当月レートで円換算（FX_RATES = 1 JPY = rate[cur]）
+function dispAnnualJPY(d){
+  if(!d) return null;
+  if(d.cur === 'JPY') return d.local;
+  const rate = FX_RATES[d.cur];
+  if(!rate) return null;       // レート未取得
+  return Math.round(d.local / rate);
+}
+// 現地通貨の年額を読みやすく整形
+function dispLocalStr(d){
+  if(!d) return '';
+  const v = d.local;
+  const s = v >= 1_000_000 ? (v/10000).toLocaleString('ja-JP',{maximumFractionDigits:0})+'万'
+          : v.toLocaleString('ja-JP');
+  return `${s} ${d.cur}`;
+}
 
 // ── 為替レート（月次キャッシュ）────────────────────────────────────────────
 const CURRENCY_MAP = {
