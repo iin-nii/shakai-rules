@@ -52,6 +52,13 @@ export default function RootLayout({
               >
                 日常
               </Link>
+              <Link
+                href="/shukou"
+                className="text-xs font-bold px-3 py-1 rounded-full transition-opacity hover:opacity-80"
+                style={{ backgroundColor: "#7c3aed", color: "#fff" }}
+              >
+                趣向
+              </Link>
             </div>
             <nav className="flex gap-6 text-sm font-medium" style={{ color: "#94a3b8" }}>
               <Link href="/quiz" className="hover:text-white transition-colors">クイズ</Link>

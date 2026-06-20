@@ -47,26 +47,6 @@ const CATEGORIES = [
     bg: "#0d0a1a",
     border: "rgba(167,139,250,0.3)",
   },
-  {
-    href: "/nichijo/kousui",
-    icon: "🌸",
-    label: "香水",
-    sub: "香調・濃度・選び方・つけ方",
-    desc: "香水の基礎知識を体系的に整理。フレグランスの種類・香りの構造・シーン別選び方を解説。",
-    color: "#f472b6",
-    bg: "#1a0010",
-    border: "rgba(244,114,182,0.3)",
-  },
-  {
-    href: "/nichijo/kokoa",
-    icon: "🍫",
-    label: "ココア・チョコレート",
-    sub: "産地・カカオ・フレーバー",
-    desc: "カカオの世界を深掘り。産地による風味の違い・チョコレートの製造工程・ペアリングまで体系化。",
-    color: "#d97706",
-    bg: "#160a00",
-    border: "rgba(217,119,6,0.3)",
-  },
 ];
 
 export default function NichijoPage() {
