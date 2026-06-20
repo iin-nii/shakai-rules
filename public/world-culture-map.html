@@ -266,9 +266,10 @@ svg#map:active { cursor:grabbing; }
 .rg-bar-fill { height:100%; border-radius:3px; transition:width 0.3s; }
 .rg-val { width:58px; text-align:right; font-size:11px; font-weight:600; flex-shrink:0; }
 /* 指標トグルバー */
-#region-metric-bar {
+#region-metric-bar, #cn-metric-bar, #jp-metric-bar {
   display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  padding:8px 20px; border-bottom:0.5px solid var(--bd); flex-shrink:0;
+  padding:8px 16px; border-bottom:0.5px solid var(--bd); flex-shrink:0;
+  background:var(--bg2);
 }
 .mt-seg { display:inline-flex; background:var(--bg2); border:0.5px solid var(--bd); border-radius:8px; overflow:hidden; }
 .mt-btn {
@@ -577,6 +578,14 @@ svg#map:active { cursor:grabbing; }
       <span id="minwage-updated" style="font-size:11px;color:var(--tx3)">（2025年10月04日 改定）</span>
       <button class="japan-close" onclick="document.getElementById('japan-section').classList.remove('open')" title="閉じる">✕</button>
     </div>
+    <div id="jp-metric-bar">
+      <div class="mt-seg">
+        <button class="mt-btn" data-metric="income" onclick="setJpMetric('income')">💴 最低賃金</button>
+        <button class="mt-btn" data-metric="price"  onclick="setJpMetric('price')">🏷 物価指数</button>
+        <button class="mt-btn" data-metric="real"   onclick="setJpMetric('real')">⚖ 実質購買力</button>
+      </div>
+      <span class="mt-hint" id="jp-metric-hint"></span>
+    </div>
     <div id="japan-body">
       <div id="japan-map-col">
         <svg id="japan-svg"></svg>
@@ -606,6 +615,14 @@ svg#map:active { cursor:grabbing; }
       🗺 省・直轄市別 平均月収マップ
       <span style="font-size:11px;color:var(--tx3)">（2024年 国家統計局）</span>
       <button class="japan-close" onclick="document.getElementById('china-section').classList.remove('open')" title="閉じる">✕</button>
+    </div>
+    <div id="cn-metric-bar">
+      <div class="mt-seg">
+        <button class="mt-btn" data-metric="income" onclick="setCnMetric('income')">💴 名目月収</button>
+        <button class="mt-btn" data-metric="price"  onclick="setCnMetric('price')">🏷 物価指数</button>
+        <button class="mt-btn" data-metric="real"   onclick="setCnMetric('real')">⚖ 実質購買力</button>
+      </div>
+      <span class="mt-hint" id="cn-metric-hint"></span>
     </div>
     <div id="china-body">
       <div id="china-map-col">
@@ -4108,6 +4125,7 @@ function showPanel(info, id){
 function openJapanMap(){
   const js = document.getElementById('japan-section');
   if(!js) return;
+  _syncMetricBar('jp-metric-bar', _jpMetric);
   js.classList.add('open');
   requestAnimationFrame(() => renderJapanMap());
 }
@@ -4709,6 +4727,24 @@ function renderJapanMap(){
     });
 }
 
+let _jpData = {};
+// 日本: 選択中の都道府県の情報パネルを現在の指標で更新（bare名で受ける）
+function _jpFillPanel(bare){
+  const r = _jpData[bare]; if(!r) return;
+  const metric = _jpMetric, g = METRICS[metric].get, unit = metric==='price'?'':'円';
+  const entries = Object.entries(_jpData).sort(([,a],[,b])=>g(b)-g(a));
+  const rank = entries.findIndex(([n])=>n===bare) + 1;
+  const avg  = Math.round(entries.reduce((s,[,x])=>s+g(x),0)/entries.length);
+  const diff = Math.round(g(r) - avg);
+  const mLbl = metric==='price'?'物価指数':metric==='real'?'実質購買力':'最低賃金';
+  const nameEl=document.getElementById('pref-name'), wageEl=document.getElementById('pref-wage'), subEl=document.getElementById('pref-sub');
+  if(nameEl) nameEl.textContent = prefFull(bare);
+  if(wageEl) wageEl.innerHTML = _lm3Block(r, '円', metric, '最低賃金/時');
+  if(subEl)  subEl.innerHTML =
+    `${mLbl}で 全国 <strong>${rank}</strong> 位（${entries.length}都道府県中）　`+
+    `平均比 <strong style="color:${diff>=0?'#178DDC':'#c07010'}">${diff>=0?'+':''}${diff.toLocaleString()}${unit}</strong>`;
+}
+
 function _drawPrefMap(topo){
   const svgEl = document.getElementById('japan-svg');
   if(!svgEl) return;
@@ -4725,16 +4761,22 @@ function _drawPrefMap(topo){
   const svg2  = d3.select(svgEl);
   svg2.selectAll('*').remove();
 
-  // 順位テーブル
-  const sorted = Object.entries(MINWAGE_JP).sort(([,a],[,b]) => b - a);
-  const rankOf = {};
-  sorted.forEach(([n,], i) => { rankOf[n] = i + 1; });
-  const avg = Math.round(sorted.reduce((s,[,v]) => s + v, 0) / sorted.length);
+  // MINWAGE_JP を {bare:{val,pi,real}} に変換して物価指数・実質購買力を付与
+  _jpData = {};
+  Object.entries(MINWAGE_JP).forEach(([n,w]) => { _jpData[n] = { val:w }; });
+  _lmEnrich(_jpData, JP_PI_ADJ);
+
+  const metric = _jpMetric;
+  const g = METRICS[metric].get;
+  const unit = metric === 'price' ? '' : '円';
+  const st = _lmStats(_jpData, metric);
+  const dataOf = raw => _jpData[prefBare(raw)] || null;
+
+  // 凡例を指標に合わせて更新
+  const legendEl = document.getElementById('japan-legend');
+  if(legendEl) legendEl.innerHTML = _lmLegendHTML(_jpData, metric, unit);
 
   const tip   = document.getElementById('pref-tip');
-  const nameEl= document.getElementById('pref-name');
-  const wageEl= document.getElementById('pref-wage');
-  const subEl = document.getElementById('pref-sub');
 
   svg2.selectAll('.jpref-path')
     .data(features)
@@ -4742,14 +4784,14 @@ function _drawPrefMap(topo){
     .attr('class', 'jpref-path')
     .attr('d', path2)
     .attr('fill', d => {
-      const w = prefWage(d.properties.nam_ja || d.properties.name || '');
-      return prefWageColor(w ?? 951);
+      const r = dataOf(d.properties.nam_ja || d.properties.name || '');
+      return r ? _lmColor(g(r), st, metric) : 'var(--bg3)';
     })
     .on('mouseover', (evt, d) => {
-      const raw  = d.properties.nam_ja || d.properties.name || '';
-      const wage = prefWage(raw);
+      const raw = d.properties.nam_ja || d.properties.name || '';
+      const r = dataOf(raw);
       if(tip){
-        tip.textContent = `${prefFull(prefBare(raw))}：${wage != null ? wage.toLocaleString() + '円' : '-'}`;
+        tip.textContent = `${prefFull(prefBare(raw))}：${r ? _lmDisp(r, metric) + unit : '-'}`;
         tip.style.opacity = '1';
       }
     })
@@ -4763,23 +4805,108 @@ function _drawPrefMap(topo){
     .on('click', (evt, d) => {
       const raw  = d.properties.nam_ja || d.properties.name || '';
       const bare = prefBare(raw);
-      const full = prefFull(bare);
-      const wage = prefWage(raw);
-      const rank = rankOf[bare] ?? rankOf[raw] ?? '–';
-      const diff = wage != null ? wage - avg : null;
-
+      if(!_jpData[bare]) return;
       svg2.selectAll('.jpref-path').classed('jpref-active', false);
       d3.select(evt.currentTarget).classed('jpref-active', true);
       if(tip) tip.style.opacity = '0';
-
-      if(nameEl) nameEl.textContent = full;
-      if(wageEl) wageEl.innerHTML = wage != null
-        ? `<span style="font-size:2em;font-weight:700;color:#178DDC">${wage.toLocaleString()}</span><span style="font-size:0.9em;color:var(--tx2)"> 円/時</span>`
-        : '<span style="color:var(--tx3)">データなし</span>';
-      if(subEl) subEl.innerHTML = wage != null
-        ? `全国 <strong>${rank}</strong> 位（47都道府県中）　全国平均比 <strong style="color:${diff >= 0 ? '#178DDC' : '#c07010'}">${diff >= 0 ? '+' : ''}${diff}円</strong>`
-        : '';
+      _jpSelName = bare;
+      _jpFillPanel(bare);
     });
+
+  // 選択中の都道府県を指標切替後も再ハイライト＋パネル更新
+  if(_jpSelName){
+    svg2.selectAll('.jpref-path')
+      .filter(d => prefBare(d.properties.nam_ja || d.properties.name || '') === _jpSelName)
+      .classed('jpref-active', true);
+    _jpFillPanel(_jpSelName);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 専用マップ（中国・日本）共有: 物価指数・実質購買力モデル
+//   pi(物価指数) = 100×(地域値/全国平均)^0.4 × 補正、real = 値÷物価指数×100
+// ══════════════════════════════════════════════════════════════════════════
+function _lmEnrich(map, adj){
+  adj = adj || {};
+  const vals = Object.values(map).map(r=>r.val);
+  const avg = (vals.reduce((a,b)=>a+b,0)/vals.length) || 1;
+  Object.entries(map).forEach(([n,r])=>{
+    const base = 100 * Math.pow(r.val/avg, 0.4);
+    r.pi   = Math.max(45, Math.round(base * (adj[n]||1)));
+    r.real = r.val * 100 / r.pi;
+  });
+}
+function _lmStats(map, metric){
+  const vs = Object.values(map).map(r=>METRICS[metric].get(r));
+  return { min:Math.min(...vs), max:Math.max(...vs) };
+}
+function _lmColor(v, st, metric){
+  let t = (v - st.min) / ((st.max - st.min) || 1);
+  if(METRICS[metric].invert) t = 1 - t;
+  return _rgColor(t);
+}
+function _lmDisp(r, metric){
+  if(metric === 'price') return r.pi + '';
+  return Math.round(METRICS[metric].get(r)).toLocaleString();
+}
+// 情報パネル用 3指標ブロック（名目/物価/実質を常に併記）
+function _lm3Block(r, unit, metric, incomeLbl){
+  const piColor = r.pi >= 110 ? '#E24B4A' : (r.pi <= 90 ? '#4a9a22' : '#E2884A');
+  const rows = [
+    {k:'income', lbl:incomeLbl, val:Math.round(r.val).toLocaleString(), u:unit,   c:'var(--tx)'},
+    {k:'price',  lbl:'物価指数', val:r.pi,                              u:'/100', c:piColor},
+    {k:'real',   lbl:'実質購買力', val:Math.round(r.real).toLocaleString(), u:unit, c:'#178DDC'},
+  ];
+  return '<div class="m3">' + rows.map(x=>
+    `<div class="m3row ${x.k===metric?'on':''}"><span>${x.lbl}</span>`+
+    `<b style="color:${x.c}">${x.val}<i>${x.u}</i></b></div>`).join('') + '</div>';
+}
+function _lmLegendHTML(map, metric, unit){
+  const st = _lmStats(map, metric);
+  const inv = METRICS[metric].invert;
+  const lbl = v => metric==='price' ? Math.round(v)+'' : Math.round(v).toLocaleString()+unit;
+  return [
+    {v:st.max, t:inv?'割高':'高'},
+    {v:(st.min+st.max)/2, t:''},
+    {v:st.min, t:inv?'割安':'低'},
+  ].map(s=>`<div class="jleg"><div class="jleg-dot" style="background:${_lmColor(s.v,st,metric)}"></div>${lbl(s.v)}${s.t?'（'+s.t+'）':''}</div>`).join('');
+}
+function _syncMetricBar(barId, metric){
+  document.querySelectorAll('#'+barId+' .mt-btn').forEach(b=>b.classList.toggle('on', b.dataset.metric===metric));
+  const h = document.getElementById(barId.replace('-bar','-hint'));
+  if(h) h.textContent = METRICS[metric].hint;
+}
+
+// 都道府県物価補正（東京=割高、地方=割安）。MINWAGE_JP のキー（bare名）に対応
+const JP_PI_ADJ = {
+  '東京':1.18,'神奈川':1.10,'大阪':1.07,'京都':1.05,'埼玉':1.04,'千葉':1.04,'愛知':1.02,'兵庫':1.02,'沖縄':1.04,
+  '青森':0.89,'秋田':0.89,'岩手':0.89,'山形':0.90,'宮崎':0.88,'鹿児島':0.88,'高知':0.89,'鳥取':0.90,'島根':0.90,
+  '佐賀':0.91,'長崎':0.91,'大分':0.91,'熊本':0.92,'福島':0.92,'山口':0.92,'愛媛':0.91,'徳島':0.92,'和歌山':0.92,
+};
+
+let _cnMetric = 'income';
+let _jpMetric = 'income';
+let _cnSelName = null;
+let _jpSelName = null;
+function setCnMetric(m){ if(!METRICS[m]||m===_cnMetric) return; _cnMetric=m; _syncMetricBar('cn-metric-bar',m); renderChinaMap(); }
+function setJpMetric(m){ if(!METRICS[m]||m===_jpMetric) return; _jpMetric=m; _syncMetricBar('jp-metric-bar',m); renderJapanMap(); }
+
+// 中国: 選択中の省の情報パネルを現在の指標で更新
+function _cnFillPanel(jp){
+  const r = CN_DATA[jp]; if(!r) return;
+  const metric = _cnMetric, g = METRICS[metric].get, unit = metric==='price'?'':'元';
+  const entries = Object.entries(CN_DATA).sort(([,a],[,b])=>g(b)-g(a));
+  const rank = entries.findIndex(([n])=>n===jp) + 1;
+  const avg  = Math.round(entries.reduce((s,[,x])=>s+g(x),0)/entries.length);
+  const diff = Math.round(g(r) - avg);
+  const mLbl = metric==='price'?'物価指数':metric==='real'?'実質購買力':'平均月収';
+  const nameEl=document.getElementById('prov-name'), wageEl=document.getElementById('prov-wage'), subEl=document.getElementById('prov-sub');
+  if(nameEl) nameEl.textContent = jp;
+  if(wageEl) wageEl.innerHTML = _lm3Block(r, '元', metric, '平均月収');
+  if(subEl)  subEl.innerHTML =
+    `${mLbl}で 全国 <strong>${rank}</strong> 位（${entries.length}省市中）　`+
+    `平均比 <strong style="color:${diff>=0?'#178DDC':'#c07010'}">${diff>=0?'+':''}${diff.toLocaleString()}${unit}</strong>`+
+    `<br><br>${r.sub}`;
 }
 
 // ── 中国省別平均月収マップ ─────────────────────────────────────────────────
@@ -4812,6 +4939,8 @@ function cnIncomeColor(v){
 function openChinaMap(){
   const cs = document.getElementById('china-section');
   if(!cs) return;
+  _lmEnrich(CN_DATA, REGION_PI_ADJ[156]);   // 物価指数・実質購買力を付与
+  _syncMetricBar('cn-metric-bar', _cnMetric);
   cs.classList.add('open');
   requestAnimationFrame(() => renderChinaMap());
 }
@@ -4855,10 +4984,18 @@ function _drawChinaMap(topo){
   svg2.attr('width', W).attr('height', H);
   svg2.selectAll('*').remove();
 
-  const sorted = Object.entries(CN_DATA).sort(([,a],[,b]) => b.val - a.val);
+  const metric = _cnMetric;
+  const g = METRICS[metric].get;
+  const unit = metric === 'price' ? '' : '元';
+  const st = _lmStats(CN_DATA, metric);
+  const sorted = Object.entries(CN_DATA).sort(([,a],[,b]) => g(b) - g(a));
   const rankOf = {};
   sorted.forEach(([n,], i) => { rankOf[n] = i + 1; });
-  const avg = Math.round(sorted.reduce((s,[,r]) => s + r.val, 0) / sorted.length);
+  const avg = Math.round(sorted.reduce((s,[,r]) => s + g(r), 0) / sorted.length);
+
+  // 凡例を指標に合わせて更新
+  const legendEl = document.getElementById('china-legend');
+  if(legendEl) legendEl.innerHTML = _lmLegendHTML(CN_DATA, metric, unit);
 
   const tip    = document.getElementById('prov-tip');
   const nameEl = document.getElementById('prov-name');
@@ -4872,7 +5009,8 @@ function _drawChinaMap(topo){
     .attr('d', path2)
     .attr('fill', d => {
       const jp = getJpName(d);
-      return (jp && CN_DATA[jp]) ? cnIncomeColor(CN_DATA[jp].val) : 'var(--bg3)';
+      const r  = jp && CN_DATA[jp];
+      return r ? _lmColor(g(r), st, metric) : 'var(--bg3)';
     })
     .attr('stroke', 'var(--bg)').attr('stroke-width', 0.4)
     .style('cursor', d => { const jp=getJpName(d); return (jp&&CN_DATA[jp])?'pointer':'default'; })
@@ -4880,7 +5018,7 @@ function _drawChinaMap(topo){
       const jp = getJpName(d);
       const r  = jp ? CN_DATA[jp] : null;
       if(r && tip){
-        tip.textContent = `${jp}：${r.val.toLocaleString()}元/月`;
+        tip.textContent = `${jp}：${_lmDisp(r, metric)}${unit}`;
         tip.style.opacity = '1';
       }
     })
@@ -4898,17 +5036,15 @@ function _drawChinaMap(topo){
       svg2.selectAll('.cnprov-path').classed('cnprov-active', false);
       d3.select(evt.currentTarget).classed('cnprov-active', true);
       if(tip) tip.style.opacity = '0';
-      const rank = rankOf[jp] ?? '–';
-      const diff = r.val - avg;
-      if(nameEl) nameEl.textContent = jp;
-      if(wageEl) wageEl.innerHTML =
-        `<span style="font-size:2em;font-weight:700;color:#178DDC">${r.val.toLocaleString()}</span>`+
-        `<span style="font-size:0.9em;color:var(--tx2)"> 元/月</span>`;
-      if(subEl) subEl.innerHTML =
-        `全国 <strong>${rank}</strong> 位（${sorted.length}省市中）　`+
-        `全国平均比 <strong style="color:${diff>=0?'#178DDC':'#c07010'}">${diff>=0?'+':''}${diff.toLocaleString()}元</strong>`+
-        `<br><br>${r.sub}`;
+      _cnSelName = jp;
+      _cnFillPanel(jp);
     });
+
+  // 選択中の省を指標切替後も再ハイライト＋パネル更新
+  if(_cnSelName){
+    svg2.selectAll('.cnprov-path').filter(d=>getJpName(d)===_cnSelName).classed('cnprov-active', true);
+    _cnFillPanel(_cnSelName);
+  }
 }
 
 // ── パネルリサイズ ────────────────────────────────────────────────────────
