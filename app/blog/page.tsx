@@ -49,57 +49,76 @@ export default function BlogPage() {
         ))}
       </div>
 
-      {/* 日常ガイド（/nichijo 配下のページをカードで紹介） */}
-      {guides.length > 0 && (
-        <div className="mt-16">
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-black">日常ガイド</h2>
-            <span
-              className="text-xs font-bold px-3 py-1 rounded-full"
-              style={{ backgroundColor: "#ef4444", color: "#fff" }}
-            >
-              日常
-            </span>
-          </div>
-          <p className="text-sm mb-8" style={{ color: "#94a3b8" }}>
-            食事・健康・お金など、毎日の生活を体系的に整理したリファレンス集
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {guides.map((g) => (
-              <Link
-                key={g.href}
-                href={g.href}
-                className="card block hover:scale-[1.02] transition-transform"
+      {/* ガイド（/nichijo 日常・/shukou 趣向 のページをカードで紹介） */}
+      {GUIDE_SECTIONS.map((sec) => {
+        const items = guides.filter((g) => g.section === sec.section);
+        if (items.length === 0) return null;
+        return (
+          <div key={sec.section} className="mt-16">
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-2xl font-black">{sec.heading}</h2>
+              <span
+                className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ backgroundColor: sec.badgeBg, color: "#fff" }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                    style={{ backgroundColor: g.bgColor }}
-                  >
-                    {g.icon}
+                {sec.section}
+              </span>
+            </div>
+            <p className="text-sm mb-8" style={{ color: "#94a3b8" }}>
+              {sec.lead}
+            </p>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map((g) => (
+                <Link
+                  key={g.href}
+                  href={g.href}
+                  className="card block hover:scale-[1.02] transition-transform"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                      style={{ backgroundColor: g.bgColor }}
+                    >
+                      {g.icon}
+                    </div>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: g.bgColor, color: g.color }}
+                    >
+                      {g.category}
+                    </span>
                   </div>
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: g.bgColor, color: g.color }}
-                  >
-                    {g.category}
-                  </span>
-                </div>
-                <h2 className="text-base font-bold mb-2 leading-snug">{g.title}</h2>
-                <p className="text-sm leading-relaxed mb-4" style={{ color: "#94a3b8" }}>
-                  {g.description}
-                </p>
-                <div className="flex justify-end">
-                  <span className="text-sm font-bold" style={{ color: g.color }}>
-                    開く →
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <h2 className="text-base font-bold mb-2 leading-snug">{g.title}</h2>
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: "#94a3b8" }}>
+                    {g.description}
+                  </p>
+                  <div className="flex justify-end">
+                    <span className="text-sm font-bold" style={{ color: g.color }}>
+                      開く →
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
+
+const GUIDE_SECTIONS = [
+  {
+    section: "日常" as const,
+    heading: "日常ガイド",
+    badgeBg: "#ef4444",
+    lead: "食事・健康・お金など、毎日の生活を体系的に整理したリファレンス集",
+  },
+  {
+    section: "趣向" as const,
+    heading: "趣向ガイド",
+    badgeBg: "#d97706",
+    lead: "嗜好品・香りなど、暮らしを豊かにする趣味分野の体系的ガイド",
+  },
+];
