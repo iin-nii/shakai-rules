@@ -58,6 +58,36 @@ const blogPreviews = [
   },
 ];
 
+const hubs = [
+  {
+    href: "/tools",
+    icon: "🧰",
+    title: "ツール",
+    description: "世界文化マップ・経済損失計算機・実質時給計算など、触って学べるインタラクティブツール集。",
+    cta: "ツールを見る",
+    color: "#38bdf8",
+    bgColor: "#0c2a3a",
+  },
+  {
+    href: "/nichijo",
+    icon: "🏠",
+    title: "日常",
+    description: "会計・食事・栄養・健康。毎日の生活を体系的に整理したリファレンス。",
+    cta: "日常を開く",
+    color: "#ef4444",
+    bgColor: "#2a0e0e",
+  },
+  {
+    href: "/shukou",
+    icon: "🍫",
+    title: "趣向",
+    description: "ココア・チョコレート・香水。暮らしを豊かにする嗜好分野のガイド。",
+    cta: "趣向を開く",
+    color: "#d97706",
+    bgColor: "#1a0e00",
+  },
+];
+
 export default function Home() {
   return (
     <div>
@@ -174,6 +204,40 @@ export default function Home() {
             <Link href="/blog" className="btn-secondary inline-block">
               記事一覧を見る
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* もっと深める（ツール・日常・趣向への導線） */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-black mb-2 text-center">もっと深める</h2>
+          <p className="text-center mb-10 text-sm" style={{ color: "#94a3b8" }}>
+            クイズ以外にも、触って学ぶツールと体系ガイドがそろっています
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {hubs.map((hub) => (
+              <Link
+                key={hub.href}
+                href={hub.href}
+                className="card block hover:scale-[1.02] transition-transform"
+                style={{ borderColor: hub.color + "44" }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+                  style={{ backgroundColor: hub.bgColor }}
+                >
+                  {hub.icon}
+                </div>
+                <h3 className="text-lg font-black mb-2">{hub.title}</h3>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: "#94a3b8" }}>
+                  {hub.description}
+                </p>
+                <span className="text-sm font-bold" style={{ color: hub.color }}>
+                  {hub.cta} →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
