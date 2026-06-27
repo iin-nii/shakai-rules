@@ -44,7 +44,7 @@ html,body { height:100%; font-family:var(--font); background:var(--bg); color:va
 svg#map { width:100%; height:100%; cursor:grab; display:block; }
 svg#map:active { cursor:grabbing; }
 
-.country { fill:#2a3a4e; stroke:#3d5068; stroke-width:0.3; cursor:default; transition:fill 0.12s; }
+.country { fill:#2a3a4e; stroke:#3d5068; stroke-width:0.3; cursor:default; transition:fill 0.12s; vector-effect:non-scaling-stroke; }
 .country.has-data { cursor:pointer; }
 .country.r-east-asia  { fill:#243850; }
 .country.r-southeast-asia { fill:#1e3a4a; }
@@ -4702,18 +4702,6 @@ function prefFull(bare){
   if(bare === '大阪' || bare === '京都') return bare + '府';
   return bare + '県';
 }
-function prefWageColor(w){
-  if(w >= 1100) return '#b30000';
-  if(w >= 1050) return '#e34a33';
-  if(w >= 1000) return '#fc8d59';
-  if(w >=  960) return '#fdcc8a';
-  return '#fef0d9';
-}
-function prefWage(rawName){
-  const bare = prefBare(rawName);
-  return MINWAGE_JP[bare] ?? MINWAGE_JP[rawName];
-}
-
 function renderJapanMap(){
   const svgEl = document.getElementById('japan-svg');
   if(!svgEl) return;
@@ -4928,13 +4916,6 @@ const CN_DATA = {
   '安徽省':{val:5200, sub:'農業省・出稼ぎ送出し多い'},
   '甘粛省':{val:4500, sub:'西北部・農業・全国最低水準域'},
 };
-
-function cnIncomeColor(v){
-  if(v >= 9000) return '#4a9a22';
-  if(v >= 6000) return '#EF9F27';
-  if(v >= 5000) return '#E87A3A';
-  return '#E24B4A';
-}
 
 function openChinaMap(){
   const cs = document.getElementById('china-section');
