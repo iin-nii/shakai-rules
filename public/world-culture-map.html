@@ -3558,6 +3558,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         if(activeEl) d3.select(activeEl).classed('active',false);
         activeEl = evt.currentTarget;
         d3.select(activeEl).classed('active',true);
+        raiseActiveCountry();   // 選択国を最前面へ（グローが隣国に隠れて片側だけになるのを防ぐ）
         document.getElementById('hint').style.opacity='0';
         tooltip.style.opacity='0';
         showPanel(info, +d.id);
@@ -4493,6 +4494,16 @@ function renderUsaMap(data){
   }
 }
 
+// 選択国を最前面へ（グローが隣国の塗りに隠れて片側だけになるのを防ぐ）
+function raiseActiveCountry(){
+  if(!activeEl) return;
+  d3.select(activeEl).raise();
+  // オーバーレイ類は常に最前面を維持
+  g.selectAll('.censor-overlay').raise();
+  g.selectAll('.lang-overlay').raise();
+  g.selectAll('.lang-border-mesh').raise();
+}
+
 // 検索
 // 国フィーチャーをズーム＆センタリング（検索用）
 // SVG は viewBox="0 0 960 500" なので座標系は 960×500 固定
@@ -4525,6 +4536,7 @@ function doSearch(q){
         if(activeEl) d3.select(activeEl).classed('active',false);
         activeEl = this;
         d3.select(this).classed('active',true);
+        raiseActiveCountry();
         showPanel(info, +id);
         zoomToFeature(d);
       }
