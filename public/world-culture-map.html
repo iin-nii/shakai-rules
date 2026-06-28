@@ -60,10 +60,11 @@ svg#map:active { cursor:grabbing; }
 /* 選択国: 塗り色は変えず外枠をゴールドで強調 + グロー */
 .country.active {
   stroke: #facc15 !important;          /* 黄金色の外枠 — どの色の上でも見える */
-  stroke-width: 2.5px !important;
+  stroke-width: 1.6px !important;
   paint-order: stroke fill;             /* 枠を fill の外側に描く */
-  filter: drop-shadow(0 0 4px rgba(250,204,21,0.85))
-          drop-shadow(0 0 8px rgba(250,204,21,0.45)) !important;
+  /* グローを細く一定に（大国でも縁取りが肥大化しないように） */
+  filter: drop-shadow(0 0 1.5px rgba(250,204,21,0.95))
+          drop-shadow(0 0 3px rgba(250,204,21,0.45)) !important;
 }
 
 /* ── ツールチップ ── */
