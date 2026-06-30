@@ -13,6 +13,7 @@ import sys
 import json
 import logging
 import datetime
+import subprocess
 from pathlib import Path
 
 try:
@@ -147,10 +148,47 @@ def save_rates(rates: dict, updated_label: str):
     print(f"[OK] fx_rates.json を更新しました（{updated_label}）")
 
 
+def git_push_update(label: str):
+    """fx_rates.json をコミットして push し、Vercel本番に自動反映させる。
+    失敗してもスクリプト全体は落とさない（次回の月次実行で再試行される）。"""
+    rel = OUT_PATH.relative_to(BASE_DIR).as_posix()
+    msg = f"chore(fx): auto-update fx_rates.json ({label})"
+    try:
+        # 変更がなければ何もしない（commitエラー回避）
+        diff = subprocess.run(
+            ["git", "diff", "--quiet", "--", rel],
+            cwd=str(BASE_DIR),
+        )
+        if diff.returncode == 0:
+            logging.info("fx_rates.json に変更なし。push をスキップ。")
+            print("[SKIP] 変更なしのため push しません。")
+            return
+
+        for args in (
+            ["git", "add", rel],
+            ["git", "commit", "-m", msg],
+            ["git", "push", "origin", "HEAD"],
+        ):
+            r = subprocess.run(
+                args, cwd=str(BASE_DIR),
+                capture_output=True, text=True, encoding="utf-8", timeout=120,
+            )
+            if r.returncode != 0:
+                logging.error("git失敗 %s\nstdout:%s\nstderr:%s", args, r.stdout, r.stderr)
+                print(f"[WARN] git {args[1]} に失敗。ログ参照。")
+                return
+        logging.info("git push 完了 → Vercel本番に自動反映されます。")
+        print("[OK] git push 完了（Vercelが自動デプロイします）")
+    except Exception:
+        logging.exception("git_push_update で例外")
+        print("[WARN] push 中に例外。checker_fx.log を参照。")
+
+
 def main():
     logging.info("===== checker_fx.py 起動 =====")
 
-    if not should_update():
+    force = "--force" in sys.argv
+    if not force and not should_update():
         print("[SKIP] 今月は既に更新済みです。--force オプションで強制更新できます。")
         return
 
@@ -164,6 +202,9 @@ def main():
         logging.warning("API取得失敗。フォールバックレートを使用します。")
         print("[WARN] API取得失敗。フォールバック値を保存します。")
         save_rates(FALLBACK_RATES, f"{label}（フォールバック）")
+
+    # 保存したデータを本番へ自動反映（取得→公開まで無人で完結）
+    git_push_update(label)
 
 
 if __name__ == "__main__":
