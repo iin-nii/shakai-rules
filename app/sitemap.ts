@@ -24,6 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/tools/economy",       priority: 0.7, changeFrequency: "monthly" },
     { path: "/tools/life-planner",  priority: 0.7, changeFrequency: "monthly" },
     { path: "/tools/jikkyu",        priority: 0.7, changeFrequency: "monthly" },
+    { path: "/tools/savings-sim",   priority: 0.7, changeFrequency: "monthly" },
     { path: "/nichijo",             priority: 0.8, changeFrequency: "weekly"  },
     { path: "/shukou",              priority: 0.8, changeFrequency: "weekly"  },
   ];
