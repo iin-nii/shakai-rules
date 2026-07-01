@@ -6,3 +6,16 @@
 2026-06-01 06:00:04,983 [INFO] APIリクエスト: https://open.er-api.com/v6/latest/USD
 2026-06-01 06:00:05,635 [INFO] レート取得成功: 28通貨  USD=159.25円
 2026-06-01 06:00:05,667 [INFO] 保存完了: C:\Users\Hintl\Desktop\社会のトリセツ\shakai-rules\public\data\fx_rates.json
+2026-07-01 05:55:29,912 [INFO] ===== checker_fx.py 起動 =====
+2026-07-01 05:55:29,913 [INFO] APIリクエスト: https://open.er-api.com/v6/latest/USD
+2026-07-01 05:55:31,060 [INFO] レート取得成功: 28通貨  USD=161.89円
+2026-07-01 05:55:31,061 [INFO] 保存完了: C:\Users\Hintl\Desktop\社会のトリセツ\shakai-rules\public\data\fx_rates.json
+2026-07-01 05:56:50,534 [INFO] ===== checker_fx.py 起動 =====
+2026-07-01 05:56:50,534 [INFO] APIリクエスト: https://open.er-api.com/v6/latest/USD
+2026-07-01 05:56:51,384 [INFO] レート取得成功: 28通貨  USD=161.89円
+2026-07-01 05:56:51,385 [INFO] 保存完了: C:\Users\Hintl\Desktop\社会のトリセツ\shakai-rules\public\data\fx_rates.json
+2026-07-01 05:56:55,206 [INFO] git push 完了 → Vercel本番に自動反映されます。
+2026-07-01 06:00:01,379 [INFO] ===== checker_fx.py 起動 =====
+2026-07-01 06:00:01,379 [INFO] 今月（2026/7）は既に更新済み。スキップします。（最終取得: 2026-07-01T05:56:51.384287）
+2026-07-01 06:00:01,385 [INFO] ===== checker_fx.py 起動 =====
+2026-07-01 06:00:01,385 [INFO] 今月（2026/7）は既に更新済み。スキップします。（最終取得: 2026-07-01T05:56:51.384287）

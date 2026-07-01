@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import Script from "next/script";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { GA_ID, GSC_VERIFICATION, ADSENSE_CLIENT } from "./data/site-config";
 
 const BASE_URL = "https://shakai-rules.vercel.app";
 
@@ -28,6 +31,7 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  ...(GSC_VERIFICATION ? { verification: { google: GSC_VERIFICATION } } : {}),
 };
 
 export default function RootLayout({
@@ -37,6 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="h-full">
+      <head>
+        {ADSENSE_CLIENT && (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        )}
+      </head>
       <body className="min-h-full flex flex-col">
         {/* ヘッダー */}
         <header style={{ backgroundColor: "#1e293b", borderBottom: "1px solid #334155" }}>
@@ -79,6 +93,7 @@ export default function RootLayout({
             <p>© 2025 社会のトリセツ — 誰も教えてくれなかった社会のルール</p>
           </div>
         </footer>
+        {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
       </body>
     </html>
   );

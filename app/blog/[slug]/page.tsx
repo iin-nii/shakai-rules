@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { articleMap, articles } from "@/app/data/articles";
+import { CategoryAffiliates, InlineAffiliate } from "@/app/components/AffiliateCTA";
 
 export function generateStaticParams() {
   return articles.map((a) => ({ slug: a.slug }));
@@ -110,6 +111,9 @@ function renderContent(content: string, color: string) {
           {line.slice(2, -2)}
         </div>
       );
+    } else if (line.startsWith("[aff:")) {
+      const affKey = line.slice(5, -1).trim();
+      elements.push(<InlineAffiliate key={key++} affKey={affKey} />);
     } else if (line.startsWith("[img:")) {
       const src = line.slice(5, -1);
       elements.push(
@@ -170,6 +174,8 @@ export default async function BlogPost({
       <div className="card mb-10">
         {renderContent(article.content, article.color)}
       </div>
+
+      <CategoryAffiliates category={article.category} />
 
       {article.quizGenre && (
         <div className="card text-center mb-10"
