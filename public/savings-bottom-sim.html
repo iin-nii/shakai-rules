@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貯蓄シミュレーター〜底まで・豊かさまで〜</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Meiryo, sans-serif;
+  background: #0b0f1a;
+  color: #e0e0e0;
+  padding: 0 0 40px;
+}
+
+/* ヘッダー */
+.page-header {
+  background: linear-gradient(135deg, #0f1e3a 0%, #1a1040 100%);
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #1e2a40;
+}
+.page-header p { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+/* グリッド */
+.main-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+@media(max-width:680px){ .main-grid { grid-template-columns: 1fr; } }
+
+/* インプットパネル */
+.input-panel {
+  background: #111827;
+  border: 1px solid #1e2a40;
+  border-radius: 12px;
+  padding: 16px;
+}
+.section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569;
+  margin: 14px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #1e2a40;
+}
+.section-title:first-child { margin-top: 0; }
+
+.field { margin-bottom: 10px; }
+.field label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.field label span { color: #e2e8f0; font-weight: bold; }
+.field input[type=range] {
+  width: 100%;
+  accent-color: #6366f1;
+  height: 4px;
+}
+.field input[type=number] {
+  width: 100%;
+  background: #0b0f1a;
+  border: 1px solid #1e2a40;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+.field input:focus { outline: none; border-color: #6366f1; }
+
+.calc-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 14px;
+  letter-spacing: 0.04em;
+}
+.calc-btn:hover { opacity: 0.9; }
+
+/* 結果パネル */
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* KPI行 */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.kpi {
+  background: #111827;
+  border: 1px solid #1e2a40;
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+}
+.kpi .klabel { font-size: 0.68rem; color: #475569; margin-bottom: 4px; }
+.kpi .kval { font-size: 1.25rem; font-weight: bold; }
+.kpi.red   { border-color: #7f1d1d; }
+.kpi.green { border-color: #14532d; }
+.kpi.blue  { border-color: #1e3a5f; }
+.kval.red   { color: #f87171; }
+.kval.green { color: #4ade80; }
+.kval.blue  { color: #60a5fa; }
+.kval.yellow { color: #fbbf24; }
+
+/* グラフ */
+.chart-box {
+  background: #111827;
+  border: 1px solid #1e2a40;
+  border-radius: 12px;
+  padding: 14px;
+  position: relative;
+}
+canvas { width: 100%; display: block; border-radius: 6px; }
+
+/* 判定バナー */
+.verdict {
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.verdict.ok   { background: #052e16; border: 1px solid #15803d; color: #4ade80; }
+.verdict.warn { background: #1c1007; border: 1px solid #b45309; color: #fbbf24; }
+.verdict.danger { background: #1c0505; border: 1px solid #b91c1c; color: #f87171; }
+
+/* タイムライン */
+.timeline {
+  background: #111827;
+  border: 1px solid #1e2a40;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.8rem;
+}
+.tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #1a2030;
+}
+.tl-item:last-child { border-bottom: none; }
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.tl-time { color: #6366f1; font-weight: bold; min-width: 50px; }
+.tl-text { color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="wrap">
+    <h1 style="font-size:1.1rem;color:#a5b4fc;font-weight:900">💰 貯蓄シミュレーター ─ 豊かさまで／底まで</h1>
+    <p>今の収支をもとに「このまま続けると何ヶ月で底をつくか」「いつ豊かになれるか」を可視化</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="main-grid">
+
+  <!-- 入力 -->
+  <div class="input-panel">
+
+    <div class="section-title">📍 現在の状況</div>
+
+    <div class="field">
+      <label>現在の貯蓄残高 <span id="v_savings">0万円</span></label>
+      <input type="range" id="savings" min="0" max="500" step="5" value="10"
+        oninput="sync('savings','v_savings','万円')">
+    </div>
+    <div class="field">
+      <label>借金残高 <span id="v_debt">0万円</span></label>
+      <input type="range" id="debt" min="0" max="300" step="5" value="60"
+        oninput="sync('debt','v_debt','万円')">
+    </div>
+
+    <div class="section-title">💸 月ごとのお金</div>
+
+    <div class="field">
+      <label>月収（手取り） <span id="v_income">0万円</span></label>
+      <input type="range" id="income" min="5" max="80" step="1" value="15"
+        oninput="sync('income','v_income','万円')">
+    </div>
+    <div class="field">
+      <label>月支出（家賃・食費等） <span id="v_expense">0万円</span></label>
+      <input type="range" id="expense" min="3" max="60" step="1" value="13"
+        oninput="sync('expense','v_expense','万円')">
+    </div>
+    <div class="field">
+      <label>借金の月返済額 <span id="v_repay">0万円</span></label>
+      <input type="range" id="repay" min="0" max="10" step="0.5" value="2"
+        oninput="syncD('repay','v_repay','万円',1)">
+    </div>
+
+    <div class="section-title">📈 将来の変化</div>
+
+    <div class="field">
+      <label>年収アップ率 <span id="v_raise">0%</span></label>
+      <input type="range" id="raise" min="-5" max="20" step="0.5" value="2"
+        oninput="syncD('raise','v_raise','%',1)">
+    </div>
+    <div class="field">
+      <label>年支出アップ率（物価等） <span id="v_exprise">0%</span></label>
+      <input type="range" id="exprise" min="0" max="10" step="0.5" value="2"
+        oninput="syncD('exprise','v_exprise','%',1)">
+    </div>
+    <div class="field">
+      <label>突発出費リスク（月あたり） <span id="v_risk">0万円</span></label>
+      <input type="range" id="risk" min="0" max="10" step="0.5" value="0"
+        oninput="syncD('risk','v_risk','万円',1)">
+    </div>
+
+    <div class="section-title">🎯 目標</div>
+
+    <div class="field">
+      <label>「豊か」とみなす純資産 <span id="v_goal">0万円</span></label>
+      <input type="range" id="goal" min="50" max="3000" step="50" value="500"
+        oninput="sync('goal','v_goal','万円')">
+    </div>
+    <div class="field">
+      <label>シミュレーション期間 <span id="v_years">0年</span></label>
+      <input type="range" id="years" min="1" max="40" step="1" value="10"
+        oninput="sync('years','v_years','年')">
+    </div>
+
+    <button class="calc-btn" onclick="run()">▶ シミュレーション実行</button>
+  </div>
+
+  <!-- 結果 -->
+  <div class="result-panel" id="results" style="display:none">
+
+    <div class="kpi-row">
+      <div class="kpi red">
+        <div class="klabel">底到達</div>
+        <div class="kval red" id="k_bottom">─</div>
+      </div>
+      <div class="kpi green">
+        <div class="klabel">豊かさ到達</div>
+        <div class="kval green" id="k_goal">─</div>
+      </div>
+      <div class="kpi blue">
+        <div class="klabel">最終純資産</div>
+        <div class="kval blue" id="k_final">─</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict_box"></div>
+
+    <div class="chart-box">
+      <div style="font-size:0.75rem;color:#475569;margin-bottom:8px">純資産推移（万円）</div>
+      <canvas id="chart" height="220"></canvas>
+    </div>
+
+    <div class="timeline">
+      <div style="font-size:0.75rem;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">主要イベント</div>
+      <div id="tl"></div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<script>
+function sync(id, vid, unit){ document.getElementById(vid).textContent = Number(document.getElementById(id).value).toLocaleString() + unit; }
+function syncD(id, vid, unit, dec){ document.getElementById(vid).textContent = Number(document.getElementById(id).value).toFixed(dec) + unit; }
+
+// init display
+window.addEventListener('DOMContentLoaded',()=>{
+  sync('savings','v_savings','万円');
+  sync('debt','v_debt','万円');
+  sync('income','v_income','万円');
+  sync('expense','v_expense','万円');
+  syncD('repay','v_repay','万円',1);
+  syncD('raise','v_raise','%',1);
+  syncD('exprise','v_exprise','%',1);
+  syncD('risk','v_risk','万円',1);
+  sync('goal','v_goal','万円');
+  sync('years','v_years','年');
+  run();
+});
+
+function g(id){ return parseFloat(document.getElementById(id).value); }
+
+function run(){
+  const savings0 = g('savings');
+  const debt0    = g('debt');
+  const income0  = g('income');
+  const expense0 = g('expense');
+  const repay    = g('repay');
+  const raiseY   = g('raise') / 100;
+  const expriseY = g('exprise') / 100;
+  const risk     = g('risk');
+  const goal     = g('goal');
+  const months   = Math.round(g('years') * 12);
+
+  let savings = savings0;
+  let debt    = debt0;
+
+  const netData   = [];   // 純資産（万円）
+  const labels    = [];
+
+  let bottomMonth = null;
+  let goalMonth   = null;
+  const events    = [];
+
+  for(let m = 0; m <= months; m++){
+    const yearN = m / 12;
+    const income  = income0  * Math.pow(1 + raiseY,  yearN);
+    const expense = expense0 * Math.pow(1 + expriseY, yearN);
+
+    const net = savings - debt;
+    netData.push(Math.round(net * 10) / 10);
+    labels.push(m === 0 ? '現在' : m % 12 === 0 ? `${m/12}年後` : '');
+
+    if(m === 0){ events.push({m, label:'現在', text:`純資産 ${fmt(net)}万円（貯蓄${fmt(savings)}万・借金${fmt(debt)}万）`}); }
+
+    // 終了判定
+    if(bottomMonth === null && net < 0 && m > 0){ bottomMonth = m; events.push({m, label:'底', text:`純資産がマイナスに。貯蓄が尽き借金超過 ${fmt(Math.abs(net))}万円`}); }
+    if(goalMonth === null && net >= goal && m > 0){ goalMonth = m; events.push({m, label:'豊か', text:`目標純資産 ${fmt(goal)}万円 を達成！`}); }
+
+    // 借金完済
+    if(debt > 0 && debt <= repay + income - expense){ debt = 0; if(!events.find(e=>e.label==='完済')) events.push({m, label:'完済', text:`借金完済！月の余剰がすべて貯蓄に回せるようになった`}); }
+
+    if(m < months){
+      const monthlySave = income - expense - (debt > 0 ? repay : 0) - risk;
+      savings += monthlySave;
+      if(debt > 0) debt = Math.max(0, debt - repay);
+      if(savings < 0){ savings = 0; }
+    }
+  }
+
+  const finalNet = netData[netData.length - 1];
+  events.push({m: months, label:'終点', text:`${Math.round(g('years'))}年後の純資産 ${fmt(finalNet)}万円`});
+
+  // KPI
+  document.getElementById('k_bottom').textContent = bottomMonth ? `${bottomMonth}ヶ月後` : '到達せず';
+  document.getElementById('k_goal').textContent   = goalMonth   ? `${goalMonth}ヶ月後`   : '到達せず';
+  document.getElementById('k_final').textContent  = fmt(finalNet) + '万円';
+
+  // 判定
+  const vb = document.getElementById('verdict_box');
+  if(bottomMonth && !goalMonth){
+    vb.className = 'verdict danger';
+    vb.innerHTML = `⚠️ <strong>このままでは ${bottomMonth}ヶ月後（${fmtY(bottomMonth)}）に底を打ちます。</strong><br>月の収支が赤字か、返済負担が重すぎます。収入を増やすか、支出・返済額を見直してください。`;
+  } else if(goalMonth){
+    vb.className = 'verdict ok';
+    vb.innerHTML = `✅ <strong>${goalMonth}ヶ月後（${fmtY(goalMonth)}）に目標純資産 ${fmt(goal)}万円 に到達できます！</strong><br>${bottomMonth ? `途中${bottomMonth}ヶ月後に一時的に苦しくなりますが、` : ''}このまま続ければ豊かさを実現できます。`;
+  } else {
+    vb.className = 'verdict warn';
+    vb.innerHTML = `⚠️ ${Math.round(g('years'))}年間では底にも豊かさにも到達しませんでした。<br>現状維持は続きますが、大きな前進はありません。収入アップか、目標を段階的に設定することを検討してください。`;
+  }
+
+  // タイムライン
+  const tl = document.getElementById('tl');
+  tl.innerHTML = events.slice(0,8).map(e=>{
+    const dotColor = e.label==='底'?'#f87171':e.label==='豊か'?'#4ade80':e.label==='完済'?'#fbbf24':'#6366f1';
+    return `<div class="tl-item"><div class="tl-dot" style="background:${dotColor}"></div><div class="tl-time">${e.m===0?'現在':e.m+'ヶ月後'}</div><div class="tl-text">${e.text}</div></div>`;
+  }).join('');
+
+  drawChart(labels, netData, goal, bottomMonth, goalMonth);
+  document.getElementById('results').style.display = 'flex';
+  document.getElementById('results').style.flexDirection = 'column';
+  document.getElementById('results').style.gap = '12px';
+}
+
+function fmt(n){ return Math.round(n).toLocaleString('ja-JP'); }
+function fmtY(m){ const y=Math.floor(m/12); const mo=m%12; return y>0?(y+'年'+(mo>0?mo+'ヶ月':'')):(mo+'ヶ月'); }
+
+function drawChart(labels, data, goal, bottomM, goalM){
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 28;
+  const H = 220;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top: 16, right: 16, bottom: 28, left: 52 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top  - pad.bottom;
+
+  const minV = Math.min(...data, 0);
+  const maxV = Math.max(...data, goal, 0);
+  const range = maxV - minV || 1;
+
+  const toX = i => pad.left + (i / (data.length - 1)) * cW;
+  const toY = v => pad.top  + (1 - (v - minV) / range) * cH;
+
+  // グリッド
+  ctx.strokeStyle = '#1e2a40';
+  ctx.lineWidth = 1;
+  for(let t = 0; t <= 4; t++){
+    const v = minV + (range * t / 4);
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.font = '10px Meiryo, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(v).toLocaleString(), pad.left - 4, y + 3);
+  }
+
+  // ゼロライン
+  if(minV < 0 && maxV > 0){
+    const y0 = toY(0);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.left, y0); ctx.lineTo(W - pad.right, y0); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#64748b'; ctx.font='10px Meiryo,sans-serif'; ctx.textAlign='left';
+    ctx.fillText('¥0', pad.left + 2, y0 - 3);
+  }
+
+  // 目標ライン
+  const yGoal = toY(goal);
+  ctx.strokeStyle = '#4ade8066';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(pad.left, yGoal); ctx.lineTo(W - pad.right, yGoal); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#4ade80aa'; ctx.font='10px Meiryo,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('目標 '+Math.round(goal).toLocaleString()+'万', pad.left+2, yGoal - 3);
+
+  // 塗りつぶし
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(0));
+  data.forEach((v,i)=>ctx.lineTo(toX(i), toY(v)));
+  ctx.lineTo(toX(data.length-1), toY(0));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  grad.addColorStop(0, '#6366f144');
+  grad.addColorStop(1, '#6366f100');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 折れ線
+  ctx.beginPath();
+  data.forEach((v,i)=>i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+  ctx.strokeStyle = '#818cf8';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // 底マーカー
+  if(bottomM !== null && bottomM < data.length){
+    const x = toX(bottomM); const y = toY(data[bottomM]);
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#f87171'; ctx.fill();
+    ctx.fillStyle = '#f87171'; ctx.font='bold 10px Meiryo,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('底', x, y - 10);
+  }
+
+  // 豊かマーカー
+  if(goalM !== null && goalM < data.length){
+    const x = toX(goalM); const y = toY(data[goalM]);
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#4ade80'; ctx.fill();
+    ctx.fillStyle = '#4ade80'; ctx.font='bold 10px Meiryo,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('豊か', x, y - 10);
+  }
+
+  // X軸ラベル
+  ctx.fillStyle = '#475569'; ctx.font = '9px Meiryo,sans-serif'; ctx.textAlign='center';
+  labels.forEach((lb,i)=>{ if(lb) ctx.fillText(lb, toX(i), H - pad.bottom + 14); });
+}
+</script>
+</body>
+</html>

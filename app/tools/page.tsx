@@ -34,6 +34,15 @@ const tools = [
     tag: "キャリア・人生設計",
   },
   {
+    href: "/tools/savings-sim",
+    icon: "📉",
+    title: "貯蓄シミュレーター ─ 豊かさまで／底まで",
+    description: "収支・借金・収入アップ率を入力して「底をつく月」「豊かさに到達する月」をグラフで表示。借金返済・資産形成のプランニングに。",
+    color: "#a5b4fc",
+    bgColor: "#0f0d2e",
+    tag: "貯蓄・資産形成",
+  },
+  {
     href: "/tools/jikkyu",
     icon: "⏱",
     title: "実質時給・損益計算ツール",
