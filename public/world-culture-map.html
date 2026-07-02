@@ -3515,6 +3515,7 @@ const _censordefs = svg.append('defs');
 });
 
 let scale=1, tx=0, ty=0, dragging=false, sx, sy, stx, sty, activeEl=null;
+let dragMoved=false; const DRAG_THRESH=5;  // ドラッグ(パン)とクリック(国選択)の判別
 const proj = d3.geoNaturalEarth1().scale(153).translate([480,250]);
 const pathGen = d3.geoPath().projection(proj);
 const tooltip = document.getElementById('tooltip');
@@ -3553,6 +3554,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         tooltip.style.opacity='0';
       })
       .on('click', (evt,d)=>{
+        if(dragMoved) return;   // ドラッグでパンした場合は国選択しない
         const info = DB[+d.id];
         if(!info) return;
         if(activeEl) d3.select(activeEl).classed('active',false);
@@ -4571,10 +4573,11 @@ function stopInertia(){ if(raf){ cancelAnimationFrame(raf); raf=null; } vx=0; vy
 let prevX=0, prevY=0, prevT=0;
 
 mapEl.addEventListener('mousedown', e=>{
-  if(e.target.classList.contains('country')) return;
+  // 国パス(陸地)の上でもドラッグ開始できるようにする。
+  // 「動かさず離した」場合だけ後段の click で国が選択される（dragMovedで判別）。
   if(e.target.id === 'resizer') return;
   stopInertia();
-  dragging=true;
+  dragging=true; dragMoved=false;
   sx=e.clientX; sy=e.clientY; stx=tx; sty=ty;
   prevX=e.clientX; prevY=e.clientY; prevT=performance.now();
   vx=0; vy=0;
@@ -4582,6 +4585,7 @@ mapEl.addEventListener('mousedown', e=>{
 });
 window.addEventListener('mousemove', e=>{
   if(!dragging) return;
+  if(!dragMoved && (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy)) > DRAG_THRESH) dragMoved=true;
   const now = performance.now();
   const dt  = now - prevT;
   if(dt > 0){
@@ -4627,6 +4631,7 @@ mapEl.addEventListener('touchstart', e=>{
 mapEl.addEventListener('touchmove', e=>{
   e.preventDefault();
   if(e.touches.length===1 && dragging){
+    if(!dragMoved && (Math.abs(e.touches[0].clientX - sx) + Math.abs(e.touches[0].clientY - sy)) > DRAG_THRESH) dragMoved=true;
     const now=performance.now(), dt=now-prevTT;
     if(dt>0){
       vx = vx*0.4 + (e.touches[0].clientX - prevTX)*0.6;
